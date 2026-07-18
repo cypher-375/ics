@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attack map</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;min-height:100vh;background:#0a0014}
+body{font-family:'JetBrains Mono',monospace}
+#am{--bg:#0a0014;--panel:#140a26;--panel2:#1d1038;--line:#3a2361;--cyan:#00f0ff;--magenta:#ff2bd6;--purple:#9b5cff;--yellow:#f4ff5c;--text:#eae6ff;--text-dim:#9585bd;color:var(--text);width:100%;min-height:100vh;padding:20px 28px}
+#am *{box-sizing:border-box;font-family:inherit}
+#am input,#am select,#am textarea{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 8px;border-radius:4px;font-size:12px;width:100%}
+#am input:focus,#am select:focus,#am textarea:focus{outline:none;border-color:var(--cyan)}
+#am button{cursor:pointer;background:var(--panel2);border:1px solid var(--line);color:var(--text-dim);padding:6px 10px;border-radius:4px;font-size:12px}
+#am button:hover{border-color:var(--cyan);color:var(--cyan)}
+#am .btn-primary{background:var(--purple);color:#0a0014;border-color:var(--purple);font-weight:700}
+#am .btn-primary:hover{border-color:var(--cyan);background:var(--cyan);color:#0a0014}
+#am .btn-danger{color:var(--magenta)}
+#am .btn-danger:hover{border-color:var(--magenta);color:var(--magenta)}
+#am .topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px}
+#am .brand{font-weight:700;color:var(--cyan);letter-spacing:1px;font-size:14px;margin-right:auto}
+#am .brand span{color:var(--text-dim);font-weight:400}
+#am .storage-flag{font-size:10px;color:var(--purple);border:1px solid var(--line);border-radius:4px;padding:3px 6px}
+#am .grid{display:grid;grid-template-columns:240px 1fr 280px;gap:14px}
+#am .grid2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px}
+#am .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px}
+#am .panel h3{margin:0 0 10px;font-size:11px;letter-spacing:1px;color:var(--purple);text-transform:uppercase}
+#am .field{margin-bottom:8px}
+#am .field label{display:block;font-size:10px;color:var(--text-dim);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+#am .row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#am .host-card{border:1px solid var(--line);border-radius:4px;padding:8px;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px}
+#am .host-card:hover{border-color:var(--cyan)}
+#am .host-card.sel{border-color:var(--cyan);background:var(--panel2)}
+#am .host-card .hn{font-size:12px;font-weight:700}
+#am .host-card .hip{font-size:10px;color:var(--text-dim)}
+#am .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#am .dot.owned{background:var(--magenta)}
+#am .dot.clean{background:var(--line);border:1px solid var(--purple)}
+#am .empty{color:var(--text-dim);font-size:12px;padding:14px 4px;text-align:center;border:1px dashed var(--line);border-radius:4px}
+#am .cred-row{border-bottom:1px solid var(--line);padding:6px 0;font-size:11px}
+#am .cred-row .u{font-weight:700;color:var(--text)}
+#am .cred-row .s{color:var(--cyan);word-break:break-all}
+#am .cred-row .meta{color:var(--text-dim);font-size:10px}
+#am .xbtn{float:right;color:var(--text-dim);background:none;border:none;padding:0 4px}
+#am .xbtn:hover{color:var(--magenta)}
+#am .divider{border-top:1px solid var(--line);margin:10px 0}
+#am svg text{font-family:'JetBrains Mono',monospace}
+#am table{width:100%;border-collapse:collapse;font-size:11px}
+#am th{text-align:left;color:var(--purple);text-transform:uppercase;letter-spacing:.5px;font-size:10px;padding:6px;border-bottom:1px solid var(--line)}
+#am td{padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
+#am td.sec{color:var(--cyan);word-break:break-all}
+#am .tag{display:inline-block;font-size:9px;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:3px;border:1px solid var(--line)}
+#am .tag.hi{color:var(--magenta);border-color:var(--magenta)}
+#am .tag.med{color:var(--yellow);border-color:var(--yellow)}
+#am .tag.low{color:var(--text-dim)}
+#am .target-row{border:1px solid var(--line);border-radius:4px;padding:8px;margin-bottom:6px}
+#am .target-row .tn{font-weight:700;color:var(--yellow);font-size:12px}
+#am .target-row .meta{color:var(--text-dim);font-size:10px;margin-top:2px}
+#am .plan-row{display:flex;align-items:flex-start;gap:8px;border-bottom:1px solid var(--line);padding:7px 0;font-size:12px}
+#am .plan-row .num{color:var(--purple);font-weight:700;min-width:20px}
+#am .plan-row .txt{flex:1}
+#am .plan-row.done .txt{color:var(--text-dim);text-decoration:line-through}
+#am .plan-check{cursor:pointer;width:14px;height:14px;accent-color:var(--cyan);margin-top:2px}
+@media (max-width:1100px){#am .grid2{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){#am .grid{grid-template-columns:1fr}#am .grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="am">
+  <div class="topbar">
+    <div class="brand">ATTACK_MAP <span id="am-proj-label">// loading</span></div>
+    <select id="am-proj-select"></select>
+    <button id="am-new-proj">+ project</button>
+    <button id="am-del-proj" class="btn-danger">delete project</button>
+    <span class="storage-flag" id="am-storage-flag"></span>
+  </div>
+  <div class="grid">
+    <div class="panel">
+      <h3>Hosts</h3>
+      <div id="am-host-list"></div>
+      <div class="divider"></div>
+      <div class="field"><label>Name</label><input id="am-h-name" placeholder="DC01"></div>
+      <div class="field"><label>IP</label><input id="am-h-ip" placeholder="10.10.10.5"></div>
+      <div class="field"><label>OS / notes</label><input id="am-h-os" placeholder="Windows Server 2019"></div>
+      <button class="btn-primary" id="am-add-host" style="width:100%">add host</button>
+    </div>
+
+    <div class="panel">
+      <h3>Network graph</h3>
+      <div id="am-graph"></div>
+      <div class="divider"></div>
+      <h3>Pivots</h3>
+      <div id="am-pivot-list"></div>
+      <div class="row2">
+        <div class="field"><label>From</label><select id="am-p-from"></select></div>
+        <div class="field"><label>To</label><select id="am-p-to"></select></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Method</label>
+          <select id="am-p-method"><option>ligolo-ng</option><option>chisel</option><option>SSH tunnel</option><option>SOCKS proxy</option><option>evil-winrm</option><option>other</option></select>
+        </div>
+        <div class="field"><label>Notes</label><input id="am-p-notes" placeholder="port 1080"></div>
+      </div>
+      <button class="btn-primary" id="am-add-pivot" style="width:100%">add pivot</button>
+    </div>
+
+    <div class="panel">
+      <h3>Host detail</h3>
+      <div id="am-detail-body"></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3>Tickets &amp; certificates</h3>
+      <div id="am-ticket-list"></div>
+      <div class="divider"></div>
+      <div class="field"><label>Identity (user or SPN)</label><input id="am-t-identity" placeholder="svc_sql / administrator"></div>
+      <div class="row2">
+        <div class="field"><label>Type</label>
+          <select id="am-t-type"><option>Kerberos TGT</option><option>Kerberos TGS</option><option>ccache</option><option>kirbi</option><option>PKINIT cert</option><option>ADCS cert</option><option>other</option></select>
+        </div>
+        <div class="field"><label>Host (optional)</label><select id="am-t-host"></select></div>
+      </div>
+      <div class="field"><label>Notes / path</label><input id="am-t-notes" placeholder="/tmp/administrator.ccache"></div>
+      <button class="btn-primary" id="am-add-ticket" style="width:100%">add ticket / cert</button>
+    </div>
+
+    <div class="panel">
+      <h3>High value targets</h3>
+      <div id="am-target-list"></div>
+      <div class="divider"></div>
+      <div class="field"><label>Username</label><input id="am-tg-name" placeholder="domainadmin"></div>
+      <div class="row2">
+        <div class="field"><label>Group</label><input id="am-tg-group" placeholder="Domain Admins"></div>
+        <div class="field"><label>Priority</label><select id="am-tg-priority"><option value="hi">high</option><option value="med">medium</option><option value="low">low</option></select></div>
+      </div>
+      <div class="field"><label>Seen on host (optional)</label><select id="am-tg-host"></select></div>
+      <div class="field"><label>Why / notes</label><input id="am-tg-notes" placeholder="Has session on DC01"></div>
+      <button class="btn-primary" id="am-add-target" style="width:100%">add target</button>
+    </div>
+
+    <div class="panel">
+      <h3>Planning</h3>
+      <div id="am-plan-list"></div>
+      <div class="divider"></div>
+      <div class="field"><label>Next step</label><input id="am-plan-text" placeholder="Kerberoast SPNs, crack offline"></div>
+      <button class="btn-primary" id="am-add-plan" style="width:100%">add step</button>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <h3>Loot — all users, groups, passwords &amp; hashes</h3>
+    <div class="field"><input id="am-loot-search" placeholder="search username, group, host or secret..."></div>
+    <div id="am-loot-table"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const S = { projects: [], currentId: null, data: {hosts:[],users:[],pivots:[],tickets:[],targets:[]}, selectedHostId: null, lootFilter: '' };
+  const uid = () => Math.random().toString(36).slice(2,10);
+  const $ = id => document.getElementById(id);
+
+  const hasClaudeStorage = typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function';
+  const mem = {};
+  const store = {
+    async get(key){
+      if(hasClaudeStorage){ try{ return await window.storage.get(key, false); }catch(e){ return null; } }
+      try{ const v = localStorage.getItem(key); return v!=null ? {key, value:v} : null; }catch(e){ return mem[key] !== undefined ? {key, value:mem[key]} : null; }
+    },
+    async set(key, value){
+      if(hasClaudeStorage){ try{ return await window.storage.set(key, value, false); }catch(e){ return null; } }
+      try{ localStorage.setItem(key, value); }catch(e){ mem[key] = value; }
+      return {key, value};
+    },
+    async delete(key){
+      if(hasClaudeStorage){ try{ return await window.storage.delete(key, false); }catch(e){ return null; } }
+      try{ localStorage.removeItem(key); }catch(e){ delete mem[key]; }
+      return {key, deleted:true};
+    }
+  };
+  $('am-storage-flag').textContent = hasClaudeStorage ? 'synced storage' : 'saved locally in this browser';
+
+  function blankData(){ return {hosts:[],users:[],pivots:[],tickets:[],targets:[],plans:[]}; }
+
+  async function loadProjects(){
+    const r = await store.get('projects-list');
+    try{ S.projects = r ? JSON.parse(r.value) : []; }catch(e){ S.projects = []; }
+    if(!Array.isArray(S.projects) || S.projects.length === 0){
+      S.projects = [{id: uid(), name: 'New project'}];
+      await saveProjectsList();
+    }
+    S.currentId = S.projects[0].id;
+    await loadProjectData();
+    render();
+  }
+  async function saveProjectsList(){ await store.set('projects-list', JSON.stringify(S.projects)); }
+  async function loadProjectData(){
+    const r = await store.get('project-data:' + S.currentId);
+    try{ S.data = r ? Object.assign(blankData(), JSON.parse(r.value)) : blankData(); }catch(e){ S.data = blankData(); }
+    S.selectedHostId = null;
+  }
+  let saveTimer = null;
+  function saveData(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { store.set('project-data:' + S.currentId, JSON.stringify(S.data)); }, 150);
+  }
+
+  function currentProject(){ return S.projects.find(p => p.id === S.currentId); }
+
+  async function newProject(){
+    const name = prompt('Project name:', 'HTB - ');
+    if(!name) return;
+    const p = {id: uid(), name};
+    S.projects.push(p);
+    await saveProjectsList();
+    S.currentId = p.id;
+    S.data = blankData();
+    saveData();
+    render();
+  }
+  async function deleteProject(){
+    if(S.projects.length <= 1){ alert('Cannot delete the only project.'); return; }
+    if(!confirm('Delete project "' + currentProject().name + '" and all its data? This cannot be undone.')) return;
+    await store.delete('project-data:' + S.currentId);
+    S.projects = S.projects.filter(p => p.id !== S.currentId);
+    await saveProjectsList();
+    S.currentId = S.projects[0].id;
+    await loadProjectData();
+    render();
+  }
+  async function switchProject(id){
+    S.currentId = id;
+    await loadProjectData();
+    render();
+  }
+
+  function addHost(){
+    const name = $('am-h-name').value.trim();
+    const ip = $('am-h-ip').value.trim();
+    const os = $('am-h-os').value.trim();
+    if(!name){ alert('Host needs a name.'); return; }
+    S.data.hosts.push({id: uid(), name, ip, os, compromised:false});
+    $('am-h-name').value=''; $('am-h-ip').value=''; $('am-h-os').value='';
+    saveData(); render();
+  }
+  function deleteHost(id){
+    if(!confirm('Delete host and its users/pivots?')) return;
+    S.data.hosts = S.data.hosts.filter(h => h.id !== id);
+    S.data.users = S.data.users.filter(u => u.hostId !== id);
+    S.data.pivots = S.data.pivots.filter(p => p.from !== id && p.to !== id);
+    S.data.tickets.forEach(t => { if(t.hostId === id) t.hostId = ''; });
+    if(S.selectedHostId === id) S.selectedHostId = null;
+    saveData(); render();
+  }
+  function toggleOwned(id){
+    const h = S.data.hosts.find(h => h.id === id);
+    if(h) h.compromised = !h.compromised;
+    saveData(); render();
+  }
+  function selectHost(id){ S.selectedHostId = id; render(); }
+
+  function addUser(){
+    const h = S.selectedHostId;
+    if(!h) return;
+    const username = $('am-u-name').value.trim();
+    const secret = $('am-u-secret').value.trim();
+    const secretType = $('am-u-type').value;
+    const group = $('am-u-group').value.trim();
+    if(!username){ alert('Need a username.'); return; }
+    S.data.users.push({id: uid(), hostId:h, username, secret, secretType, group});
+    saveData(); render();
+  }
+  function deleteUser(id){
+    S.data.users = S.data.users.filter(u => u.id !== id);
+    saveData(); render();
+  }
+
+  function addPivot(){
+    const from = $('am-p-from').value, to = $('am-p-to').value;
+    if(!from || !to || from === to){ alert('Pick two different hosts.'); return; }
+    S.data.pivots.push({id: uid(), from, to, method: $('am-p-method').value, notes: $('am-p-notes').value.trim()});
+    $('am-p-notes').value='';
+    saveData(); render();
+  }
+  function deletePivot(id){
+    S.data.pivots = S.data.pivots.filter(p => p.id !== id);
+    saveData(); render();
+  }
+
+  function addTicket(){
+    const identity = $('am-t-identity').value.trim();
+    if(!identity){ alert('Need an identity / SPN.'); return; }
+    S.data.tickets.push({id: uid(), identity, type: $('am-t-type').value, hostId: $('am-t-host').value, notes: $('am-t-notes').value.trim()});
+    $('am-t-identity').value=''; $('am-t-notes').value='';
+    saveData(); render();
+  }
+  function deleteTicket(id){
+    S.data.tickets = S.data.tickets.filter(t => t.id !== id);
+    saveData(); render();
+  }
+
+  function addTarget(){
+    const username = $('am-tg-name').value.trim();
+    if(!username){ alert('Need a username.'); return; }
+    S.data.targets.push({id: uid(), username, group: $('am-tg-group').value.trim(), priority: $('am-tg-priority').value, hostId: $('am-tg-host').value, notes: $('am-tg-notes').value.trim()});
+    $('am-tg-name').value=''; $('am-tg-group').value=''; $('am-tg-notes').value='';
+    saveData(); render();
+  }
+  function deleteTarget(id){
+    S.data.targets = S.data.targets.filter(t => t.id !== id);
+    saveData(); render();
+  }
+
+  function addPlan(){
+    const text = $('am-plan-text').value.trim();
+    if(!text){ return; }
+    S.data.plans.push({id: uid(), text, done:false});
+    $('am-plan-text').value='';
+    saveData(); render();
+  }
+  function deletePlan(id){
+    S.data.plans = S.data.plans.filter(p => p.id !== id);
+    saveData(); render();
+  }
+  function togglePlan(id){
+    const p = S.data.plans.find(p => p.id === id);
+    if(p) p.done = !p.done;
+    saveData(); render();
+  }
+
+  function hostName(id){ const h = S.data.hosts.find(h=>h.id===id); return h ? h.name : '?'; }
+
+  function renderProjectSelect(){
+    $('am-proj-select').innerHTML = S.projects.map(p =>
+      `<option value="${p.id}" ${p.id===S.currentId?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
+    $('am-proj-label').textContent = '// ' + (currentProject() ? currentProject().name : '');
+  }
+
+  function renderHostList(){
+    const list = $('am-host-list');
+    if(S.data.hosts.length === 0){ list.innerHTML = '<div class="empty">No hosts yet</div>'; return; }
+    list.innerHTML = S.data.hosts.map(h => `
+      <div class="host-card ${S.selectedHostId===h.id?'sel':''}" data-host="${h.id}">
+        <div>
+          <div class="hn">${escapeHtml(h.name)}</div>
+          <div class="hip">${escapeHtml(h.ip||'')}</div>
+        </div>
+        <span class="dot ${h.compromised?'owned':'clean'}" title="toggle owned" data-toggle="${h.id}"></span>
+      </div>`).join('');
+    list.querySelectorAll('[data-host]').forEach(el => el.addEventListener('click', () => selectHost(el.getAttribute('data-host'))));
+    list.querySelectorAll('[data-toggle]').forEach(el => el.addEventListener('click', (e) => { e.stopPropagation(); toggleOwned(el.getAttribute('data-toggle')); }));
+  }
+
+  function renderPivotSelects(){
+    const opts = '<option value="">--</option>' + S.data.hosts.map(h => `<option value="${h.id}">${escapeHtml(h.name)}</option>`).join('');
+    $('am-p-from').innerHTML = opts;
+    $('am-p-to').innerHTML = opts;
+    $('am-t-host').innerHTML = opts;
+    $('am-tg-host').innerHTML = opts;
+  }
+
+  function renderPivotList(){
+    const list = $('am-pivot-list');
+    if(S.data.pivots.length === 0){ list.innerHTML = '<div class="empty" style="margin-bottom:8px">No pivots yet</div>'; return; }
+    list.innerHTML = S.data.pivots.map(p => `
+      <div class="cred-row">
+        <button class="xbtn" data-delpivot="${p.id}">x</button>
+        <span class="u">${escapeHtml(hostName(p.from))} &rarr; ${escapeHtml(hostName(p.to))}</span>
+        <div class="meta">${escapeHtml(p.method)}${p.notes ? ' &middot; ' + escapeHtml(p.notes) : ''}</div>
+      </div>`).join('');
+    list.querySelectorAll('[data-delpivot]').forEach(el => el.addEventListener('click', () => deletePivot(el.getAttribute('data-delpivot'))));
+  }
+
+  function renderTicketList(){
+    const list = $('am-ticket-list');
+    if(S.data.tickets.length === 0){ list.innerHTML = '<div class="empty" style="margin-bottom:8px">No tickets or certs yet</div>'; return; }
+    list.innerHTML = S.data.tickets.map(t => `
+      <div class="cred-row">
+        <button class="xbtn" data-deltick="${t.id}">x</button>
+        <span class="u">${escapeHtml(t.identity)}</span>
+        <div class="meta">${escapeHtml(t.type)}${t.hostId ? ' &middot; ' + escapeHtml(hostName(t.hostId)) : ''}</div>
+        ${t.notes ? '<div class="s">' + escapeHtml(t.notes) + '</div>' : ''}
+      </div>`).join('');
+    list.querySelectorAll('[data-deltick]').forEach(el => el.addEventListener('click', () => deleteTicket(el.getAttribute('data-deltick'))));
+  }
+
+  function renderTargetList(){
+    const list = $('am-target-list');
+    if(S.data.targets.length === 0){ list.innerHTML = '<div class="empty" style="margin-bottom:8px">No targets yet</div>'; return; }
+    const order = {hi:0, med:1, low:2};
+    const sorted = [...S.data.targets].sort((a,b) => order[a.priority]-order[b.priority]);
+    list.innerHTML = sorted.map(t => `
+      <div class="target-row">
+        <button class="xbtn" data-deltarget="${t.id}">x</button>
+        <span class="tn">${escapeHtml(t.username)}</span>
+        <span class="tag ${t.priority}">${t.priority}</span>
+        ${t.group ? '<div class="meta">' + escapeHtml(t.group) + '</div>' : ''}
+        ${t.hostId ? '<div class="meta">on ' + escapeHtml(hostName(t.hostId)) + '</div>' : ''}
+        ${t.notes ? '<div class="meta">' + escapeHtml(t.notes) + '</div>' : ''}
+      </div>`).join('');
+    list.querySelectorAll('[data-deltarget]').forEach(el => el.addEventListener('click', () => deleteTarget(el.getAttribute('data-deltarget'))));
+  }
+
+  function renderPlanList(){
+    const list = $('am-plan-list');
+    if(S.data.plans.length === 0){ list.innerHTML = '<div class="empty" style="margin-bottom:8px">No plan steps yet</div>'; return; }
+    list.innerHTML = S.data.plans.map((p,i) => `
+      <div class="plan-row ${p.done?'done':''}">
+        <input type="checkbox" class="plan-check" data-toggleplan="${p.id}" ${p.done?'checked':''}>
+        <span class="num">${i+1}.</span>
+        <span class="txt">${escapeHtml(p.text)}</span>
+        <button class="xbtn" data-delplan="${p.id}">x</button>
+      </div>`).join('');
+    list.querySelectorAll('[data-toggleplan]').forEach(el => el.addEventListener('change', () => togglePlan(el.getAttribute('data-toggleplan'))));
+    list.querySelectorAll('[data-delplan]').forEach(el => el.addEventListener('click', () => deletePlan(el.getAttribute('data-delplan'))));
+  }
+
+  function renderDetail(){
+    const body = $('am-detail-body');
+    const h = S.data.hosts.find(h => h.id === S.selectedHostId);
+    if(!h){ body.innerHTML = '<div class="empty">Select a host to view or add users, groups, passwords and hashes.</div>'; return; }
+    const creds = S.data.users.filter(u => u.hostId === h.id);
+    body.innerHTML = `
+      <div style="margin-bottom:8px">
+        <div class="hn" style="font-size:13px">${escapeHtml(h.name)}</div>
+        <div class="hip">${escapeHtml(h.ip||'')} ${h.os ? '&middot; ' + escapeHtml(h.os) : ''}</div>
+      </div>
+      <div>${creds.length ? creds.map(c => `
+        <div class="cred-row">
+          <button class="xbtn" data-deluser="${c.id}">x</button>
+          <span class="u">${escapeHtml(c.username)}</span>${c.group ? ' <span class="meta">(' + escapeHtml(c.group) + ')</span>' : ''}
+          <div class="s">${escapeHtml(c.secretType)}: ${escapeHtml(c.secret||'-')}</div>
+        </div>`).join('') : '<div class="empty">No users recorded</div>'}
+      </div>
+      <div class="divider"></div>
+      <div class="field"><label>Username</label><input id="am-u-name" placeholder="j.smith"></div>
+      <div class="row2">
+        <div class="field"><label>Type</label><select id="am-u-type"><option value="password">password</option><option value="hash">hash</option></select></div>
+        <div class="field"><label>Group</label><input id="am-u-group" placeholder="Domain Admins"></div>
+      </div>
+      <div class="field"><label>Password / hash</label><input id="am-u-secret" placeholder="value"></div>
+      <button class="btn-primary" id="am-add-user" style="width:100%">add user</button>
+      <div class="divider"></div>
+      <button class="btn-danger" id="am-remove-host" style="width:100%">delete host</button>
+    `;
+    $('am-add-user').addEventListener('click', addUser);
+    $('am-remove-host').addEventListener('click', () => deleteHost(h.id));
+    body.querySelectorAll('[data-deluser]').forEach(el => el.addEventListener('click', () => deleteUser(el.getAttribute('data-deluser'))));
+  }
+
+  function renderGraph(){
+    const el = $('am-graph');
+    const hosts = S.data.hosts;
+    if(hosts.length === 0){ el.innerHTML = '<div class="empty">Add hosts to see the map</div>'; return; }
+    const w = el.clientWidth || 420, hgt = Math.max(260, 90 + Math.ceil(hosts.length/4)*90);
+    const cx = w/2, cy = hgt/2, r = Math.min(w,hgt)/2 - 60;
+    const pos = {};
+    hosts.forEach((h,i) => {
+      const a = (i / hosts.length) * Math.PI * 2 - Math.PI/2;
+      pos[h.id] = hosts.length===1 ? {x:cx,y:cy} : {x: cx + r*Math.cos(a), y: cy + r*Math.sin(a)};
+    });
+    let svg = `<svg width="100%" viewBox="0 0 ${w} ${hgt}">
+      <defs><marker id="am-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>`;
+    S.data.pivots.forEach(p => {
+      const a = pos[p.from], b = pos[p.to];
+      if(!a || !b) return;
+      const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+      svg += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#00f0ff" stroke-width="1" opacity="0.6" marker-end="url(#am-arrow)"/>
+        <text x="${mx}" y="${my-4}" fill="#9585bd" font-size="9" text-anchor="middle">${escapeHtml(p.method)}</text>`;
+    });
+    hosts.forEach(h => {
+      const p = pos[h.id];
+      const isTarget = S.data.targets.some(t => t.hostId === h.id);
+      const fill = h.compromised ? '#3a1044' : (isTarget ? '#332b00' : '#140a26');
+      const stroke = h.compromised ? '#ff2bd6' : (isTarget ? '#f4ff5c' : '#9b5cff');
+      const sw = isTarget && !h.compromised ? 1.6 : 0.5;
+      const sel = h.id === S.selectedHostId;
+      svg += `<g style="cursor:pointer" data-node="${h.id}">
+        <rect x="${p.x-42}" y="${p.y-20}" width="84" height="40" rx="6" fill="${fill}" stroke="${sel?'#00f0ff':stroke}" stroke-width="${sel?1.5:sw}"/>
+        <text x="${p.x}" y="${p.y-4}" fill="${isTarget && !h.compromised ? '#f4ff5c' : '#eae6ff'}" font-size="11" font-weight="700" text-anchor="middle">${escapeHtml(h.name).slice(0,14)}</text>
+        <text x="${p.x}" y="${p.y+11}" fill="#9585bd" font-size="9" text-anchor="middle">${escapeHtml(h.ip||'')}</text>
+      </g>`;
+    });
+    svg += '</svg>';
+    el.innerHTML = svg;
+    el.querySelectorAll('[data-node]').forEach(el2 => el2.addEventListener('click', () => selectHost(el2.getAttribute('data-node'))));
+  }
+
+  function renderLoot(){
+    const q = S.lootFilter.trim().toLowerCase();
+    const rows = S.data.users.map(u => Object.assign({}, u, {host: hostName(u.hostId)}))
+      .filter(u => !q || [u.username,u.group,u.host,u.secret,u.secretType].join(' ').toLowerCase().includes(q));
+    const el = $('am-loot-table');
+    if(S.data.users.length === 0){ el.innerHTML = '<div class="empty">No credentials recorded yet</div>'; return; }
+    if(rows.length === 0){ el.innerHTML = '<div class="empty">No matches</div>'; return; }
+    el.innerHTML = `<table><thead><tr><th>Host</th><th>Username</th><th>Group</th><th>Type</th><th>Secret</th><th></th></tr></thead><tbody>
+      ${rows.map(u => `<tr>
+        <td>${escapeHtml(u.host)}</td>
+        <td>${escapeHtml(u.username)}</td>
+        <td>${escapeHtml(u.group||'-')}</td>
+        <td>${escapeHtml(u.secretType)}</td>
+        <td class="sec">${escapeHtml(u.secret||'-')}</td>
+        <td><button class="xbtn" data-delloot="${u.id}">x</button></td>
+      </tr>`).join('')}
+      </tbody></table>`;
+    el.querySelectorAll('[data-delloot]').forEach(el2 => el2.addEventListener('click', () => deleteUser(el2.getAttribute('data-delloot'))));
+  }
+
+  function escapeHtml(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function render(){
+    renderProjectSelect();
+    renderHostList();
+    renderPivotSelects();
+    renderPivotList();
+    renderTicketList();
+    renderTargetList();
+    renderPlanList();
+    renderDetail();
+    renderGraph();
+    renderLoot();
+  }
+
+  $('am-new-proj').addEventListener('click', newProject);
+  $('am-del-proj').addEventListener('click', deleteProject);
+  $('am-proj-select').addEventListener('change', e => switchProject(e.target.value));
+  $('am-add-host').addEventListener('click', addHost);
+  $('am-add-pivot').addEventListener('click', addPivot);
+  $('am-add-ticket').addEventListener('click', addTicket);
+  $('am-add-target').addEventListener('click', addTarget);
+  $('am-add-plan').addEventListener('click', addPlan);
+  $('am-loot-search').addEventListener('input', e => { S.lootFilter = e.target.value; renderLoot(); });
+
+  loadProjects();
+})();
+</script>
+</body>
+</html>
